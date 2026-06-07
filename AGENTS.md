@@ -89,6 +89,8 @@ Avoid complex abstractions until the app actually needs them. Keep early impleme
 
 Use a calm, practical UI optimized for quick daily use and fast transaction entry.
 
+For UI design, implementation, polish, or review tasks, use the repo-local `android-ui-designer` skill and follow `docs/ui_guidelines.md`.
+
 Prefer Material 3 Compose components.
 
 Use a simple hamburger/drawer menu for navigation between main screens.

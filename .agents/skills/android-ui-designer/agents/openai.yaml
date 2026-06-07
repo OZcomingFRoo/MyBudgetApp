@@ -1,0 +1,4 @@
+interface:
+  display_name: Android UI Designer
+  short_description: Design and implement My Budget Android UI consistently.
+  default_prompt: Use this skill to design, implement, polish, or review My Budget Android UI.
