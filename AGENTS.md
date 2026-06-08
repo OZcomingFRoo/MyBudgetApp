@@ -6,7 +6,7 @@ This file is the main AI-agent guide for the My Budget Android project. Future a
 
 My Budget is a casual Android budgeting app for managing money, tracking how much users spend, and tracking how much they earn.
 
-The app is intended for casual personal finance usage by individuals, families/households, freelancers, and small business owners. It should help users understand spending habits, stay within budgets, track income versus expenses, plan budgets, avoid overspending, and eventually export or share records.
+The app is intended for casual personal finance usage by individuals, families/households, freelancers, and small business owners. It should help users understand spending habits, track income versus expenses, monitor how much money remains from entered income, avoid overspending, and eventually export or share records.
 
 This is not intended to become an advanced accounting, tax, investment, or enterprise finance system unless explicitly requested.
 
@@ -17,8 +17,6 @@ The app should eventually support:
 - adding expenses
 - adding income
 - predefined and user-created categories
-- budget limits
-- weekly, monthly, yearly, and custom budgets
 - recurring transactions
 - dashboard/summary views
 - charts and reports
@@ -28,13 +26,13 @@ The app should eventually support:
 - reminders
 - settings
 - editing and deleting user data
+- home-screen widgets for quick remaining-balance checks
 
 Main screens should include:
 
 - home/dashboard
 - add transaction
 - history
-- budgets
 - categories
 - reports/charts
 - settings
@@ -50,6 +48,7 @@ Out of scope unless explicitly requested:
 - OCR receipt scanning
 - currency exchange
 - multi-currency support
+- formal budget-limit tables or budget planning models
 
 Data should be local-only for now. Future cloud sync may be considered later, preferably through familiar account providers such as Google/Gmail or Facebook.
 
@@ -73,7 +72,7 @@ Use MVVM with simple clean/layered boundaries. Keep business logic outside UI an
 
 Use a feature-first package structure, with shared `data`, `domain`, and `core` packages where useful.
 
-Use Room for persistent app data such as transactions, budgets, and categories.
+Use Room for persistent app data. The current local data model is `BudgetBook`, `Category`, `Transaction`, and `RecurringTransaction`. Do not add a formal `Budget` model unless explicitly requested.
 
 Use DataStore for settings.
 
