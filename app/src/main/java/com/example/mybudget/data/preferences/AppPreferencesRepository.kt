@@ -14,9 +14,10 @@ import kotlinx.coroutines.flow.map
 
 data class AppPreferences(
     val selectedBudgetBookId: Long?,
-    val themeMode: String,
-    val languageTag: String,
+    val themeMode: AppThemeMode,
+    val languageMode: AppLanguageMode,
     val hasCompletedOnboarding: Boolean,
+    val defaultTransactionType: DefaultTransactionType,
 )
 
 @Singleton
@@ -26,9 +27,12 @@ class AppPreferencesRepository @Inject constructor(
     val preferences: Flow<AppPreferences> = dataStore.data.map { preferences ->
         AppPreferences(
             selectedBudgetBookId = preferences[SELECTED_BUDGET_BOOK_ID],
-            themeMode = preferences[THEME_MODE] ?: DEFAULT_THEME_MODE,
-            languageTag = preferences[LANGUAGE_TAG] ?: DEFAULT_LANGUAGE_TAG,
+            themeMode = AppThemeMode.fromStorageValue(preferences[THEME_MODE]),
+            languageMode = AppLanguageMode.fromStorageValue(preferences[LANGUAGE_MODE]),
             hasCompletedOnboarding = preferences[HAS_COMPLETED_ONBOARDING] ?: false,
+            defaultTransactionType = DefaultTransactionType.fromStorageValue(
+                preferences[DEFAULT_TRANSACTION_TYPE],
+            ),
         )
     }
 
@@ -40,15 +44,15 @@ class AppPreferencesRepository @Inject constructor(
 
     suspend fun getPreferences(): AppPreferences = preferences.first()
 
-    suspend fun setThemeMode(themeMode: String) {
+    suspend fun setThemeMode(themeMode: AppThemeMode) {
         dataStore.edit { preferences ->
-            preferences[THEME_MODE] = themeMode
+            preferences[THEME_MODE] = themeMode.name
         }
     }
 
-    suspend fun setLanguageTag(languageTag: String) {
+    suspend fun setLanguageMode(languageMode: AppLanguageMode) {
         dataStore.edit { preferences ->
-            preferences[LANGUAGE_TAG] = languageTag
+            preferences[LANGUAGE_MODE] = languageMode.name
         }
     }
 
@@ -58,13 +62,17 @@ class AppPreferencesRepository @Inject constructor(
         }
     }
 
+    suspend fun setDefaultTransactionType(defaultTransactionType: DefaultTransactionType) {
+        dataStore.edit { preferences ->
+            preferences[DEFAULT_TRANSACTION_TYPE] = defaultTransactionType.name
+        }
+    }
+
     private companion object {
         val SELECTED_BUDGET_BOOK_ID = longPreferencesKey("selected_budget_book_id")
         val THEME_MODE = stringPreferencesKey("theme_mode")
-        val LANGUAGE_TAG = stringPreferencesKey("language_tag")
+        val LANGUAGE_MODE = stringPreferencesKey("language_mode")
         val HAS_COMPLETED_ONBOARDING = booleanPreferencesKey("has_completed_onboarding")
-
-        const val DEFAULT_THEME_MODE = "default"
-        const val DEFAULT_LANGUAGE_TAG = "en-US"
+        val DEFAULT_TRANSACTION_TYPE = stringPreferencesKey("default_transaction_type")
     }
 }
