@@ -5,7 +5,10 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +25,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -66,6 +70,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -108,6 +113,7 @@ import java.time.format.DateTimeParseException
 import java.time.format.TextStyle
 import java.util.Locale
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 @Suppress("DEPRECATION")
@@ -121,19 +127,27 @@ fun MyBudgetApp(
     appPreferencesRepository: AppPreferencesRepository,
     clock: Clock,
 ) {
-    val preferences by appPreferencesRepository.preferences.collectAsState(
-        initial = AppPreferences(
-            selectedBudgetBookId = null,
-            themeMode = AppThemeMode.DEFAULT,
-            languageMode = AppLanguageMode.HE,
-            hasCompletedOnboarding = false,
-            defaultTransactionType = DefaultTransactionType.EXPENSE,
-        ),
-    )
+    val preferences by remember(appPreferencesRepository) {
+        appPreferencesRepository.preferences.map<AppPreferences, AppPreferences?> { it }
+    }.collectAsState(initial = null)
+    val loadedPreferences = preferences
 
-    LocalizedApp(languageMode = preferences.languageMode) {
-        MyBudgetTheme(themeMode = preferences.themeMode) {
-            val selectedBudgetBookId = preferences.selectedBudgetBookId
+    if (loadedPreferences == null) {
+        LocalizedApp(languageMode = AppLanguageMode.HE) {
+            MyBudgetTheme(themeMode = AppThemeMode.DEFAULT) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background),
+                )
+            }
+        }
+        return
+    }
+
+    LocalizedApp(languageMode = loadedPreferences.languageMode) {
+        MyBudgetTheme(themeMode = loadedPreferences.themeMode) {
+            val selectedBudgetBookId = loadedPreferences.selectedBudgetBookId
             val budgetBooks by remember {
                 budgetBookRepository.observeActiveBudgetBooks()
             }.collectAsState(initial = emptyList())
@@ -145,9 +159,9 @@ fun MyBudgetApp(
                 selectedBudgetBookId?.let(transactionRepository::observeForBudgetBook) ?: flowOf(emptyList())
             }.collectAsState(initial = emptyList())
 
-            if (preferences.hasCompletedOnboarding) {
+            if (loadedPreferences.hasCompletedOnboarding) {
                 MyBudgetAppShell(
-                    preferences = preferences,
+                    preferences = loadedPreferences,
                     selectedBudgetBookId = selectedBudgetBookId,
                     currentBudgetBook = currentBudgetBook,
                     categories = categories,
@@ -159,7 +173,7 @@ fun MyBudgetApp(
                 )
             } else {
                 OnboardingScreen(
-                    preferences = preferences,
+                    preferences = loadedPreferences,
                     selectedBudgetBookId = selectedBudgetBookId,
                     appPreferencesRepository = appPreferencesRepository,
                     budgetBookRepository = budgetBookRepository,
@@ -910,13 +924,12 @@ private fun SettingsScreen(
         }
         item {
             SettingsSection(title = stringResource(R.string.settings_language)) {
-                AppLanguageMode.entries.forEach { mode ->
-                    RadioSettingRow(
-                        label = mode.label(),
-                        selected = preferences.languageMode == mode,
-                        onClick = { scope.launch { appPreferencesRepository.setLanguageMode(mode) } },
-                    )
-                }
+                LanguageSelector(
+                    selectedLanguageMode = preferences.languageMode,
+                    onLanguageModeSelected = { mode ->
+                        scope.launch { appPreferencesRepository.setLanguageMode(mode) }
+                    },
+                )
             }
         }
         item {
@@ -1198,6 +1211,117 @@ private fun SettingsInfoText(
         color = color,
         modifier = Modifier.padding(top = 12.dp),
     )
+}
+
+@Composable
+private fun LanguageSelector(
+    selectedLanguageMode: AppLanguageMode,
+    onLanguageModeSelected: (AppLanguageMode) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        LanguageTile(
+            mode = AppLanguageMode.EN_US,
+            flagResId = R.drawable.flag_us,
+            selected = selectedLanguageMode == AppLanguageMode.EN_US,
+            onClick = { onLanguageModeSelected(AppLanguageMode.EN_US) },
+            modifier = Modifier.weight(1f),
+        )
+        LanguageTile(
+            mode = AppLanguageMode.HE,
+            flagResId = R.drawable.flag_israel,
+            selected = selectedLanguageMode == AppLanguageMode.HE,
+            onClick = { onLanguageModeSelected(AppLanguageMode.HE) },
+            modifier = Modifier.weight(1f),
+        )
+    }
+    RadioSettingRow(
+        label = AppLanguageMode.SYSTEM.label(),
+        selected = selectedLanguageMode == AppLanguageMode.SYSTEM,
+        onClick = { onLanguageModeSelected(AppLanguageMode.SYSTEM) },
+    )
+}
+
+@Composable
+private fun LanguageTile(
+    mode: AppLanguageMode,
+    flagResId: Int,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val tileShape = RoundedCornerShape(8.dp)
+    val flagShape = RoundedCornerShape(12.dp)
+    val containerColor = if (selected) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+    val contentColor = if (selected) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val borderColor = if (selected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.outline
+    }
+
+    Card(
+        modifier = modifier
+            .heightIn(min = 120.dp)
+            .selectable(
+                selected = selected,
+                onClick = onClick,
+                role = Role.RadioButton,
+            ),
+        shape = tileShape,
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border = BorderStroke(if (selected) 2.dp else 1.dp, borderColor),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painterResource(flagResId),
+                    contentDescription = null,
+                    contentScale = ContentScale.FillBounds,
+                    modifier = Modifier
+                        .width(72.dp)
+                        .height(48.dp)
+                        .clip(flagShape)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, flagShape),
+                )
+                RadioButton(
+                    selected = selected,
+                    onClick = null,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                )
+            }
+            Text(
+                text = mode.label(),
+                style = MaterialTheme.typography.labelLarge,
+                color = contentColor,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
 }
 
 @Composable

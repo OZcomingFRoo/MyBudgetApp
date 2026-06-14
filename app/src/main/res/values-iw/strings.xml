@@ -50,7 +50,7 @@
     <string name="theme_system">לפי הגדרת המערכת</string>
     <string name="language">שפה</string>
     <string name="language_system">לפי הגדרת המערכת</string>
-    <string name="language_english_us">אנגלית ארה&quot;ב</string>
+    <string name="language_english_us">אנגלית</string>
     <string name="language_hebrew">עברית</string>
     <string name="default_transaction_type">סוג פעולה כברירת מחדל</string>
     <string name="settings_appearance">מראה</string>
