@@ -59,10 +59,15 @@
     <string name="onboarding_budget_book_title">Budget book</string>
     <string name="budget_book_name">Budget book name</string>
     <string name="budget_book_name_helper">Use Personal or rename it for your household, freelance work, or small business.</string>
+    <string name="budget_book_name_settings_helper">This changes the current budget book name.</string>
+    <string name="budget_book_name_required">Enter a budget book name.</string>
+    <string name="budget_book_name_saved">Budget book name saved.</string>
     <string name="preparing_budget_book">Preparing your budget book...</string>
     <string name="onboarding_privacy_title">Local-only data</string>
     <string name="onboarding_privacy_body">Your budget data stays on this device for now.</string>
     <string name="default_transaction_type">Default transaction type</string>
+    <string name="save">Save</string>
+    <string name="settings_budget_book">Budget Book</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_language">Language</string>
     <string name="settings_transaction_defaults">Transaction Defaults</string>

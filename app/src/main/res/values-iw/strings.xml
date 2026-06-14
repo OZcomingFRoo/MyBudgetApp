@@ -73,4 +73,9 @@
     <string name="preparing_budget_book">מכינים את ספר התקציב שלך...</string>
     <string name="onboarding_privacy_title">נתונים מקומיים בלבד</string>
     <string name="onboarding_privacy_body">נתוני התקציב נשמרים במכשיר הזה כרגע.</string>
+    <string name="budget_book_name_settings_helper">משנה את השם של ספר התקציב הנוכחי.</string>
+    <string name="budget_book_name_required">יש להזין שם לספר התקציב.</string>
+    <string name="budget_book_name_saved">שם ספר התקציב נשמר.</string>
+    <string name="save">שמירה</string>
+    <string name="settings_budget_book">ספר תקציב</string>
 </resources>

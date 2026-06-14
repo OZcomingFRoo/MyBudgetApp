@@ -84,6 +84,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.mybudget.R
 import com.example.mybudget.core.money.MoneyFormatter
+import com.example.mybudget.data.local.entity.BudgetBookEntity
 import com.example.mybudget.data.local.entity.CategoryEntity
 import com.example.mybudget.data.local.entity.TransactionEntity
 import com.example.mybudget.data.local.model.CategoryType
@@ -133,6 +134,10 @@ fun MyBudgetApp(
     LocalizedApp(languageMode = preferences.languageMode) {
         MyBudgetTheme(themeMode = preferences.themeMode) {
             val selectedBudgetBookId = preferences.selectedBudgetBookId
+            val budgetBooks by remember {
+                budgetBookRepository.observeActiveBudgetBooks()
+            }.collectAsState(initial = emptyList())
+            val currentBudgetBook = budgetBooks.firstOrNull { it.id == selectedBudgetBookId }
             val categories by remember(selectedBudgetBookId) {
                 selectedBudgetBookId?.let(categoryRepository::observeActiveForBudgetBook) ?: flowOf(emptyList())
             }.collectAsState(initial = emptyList())
@@ -144,10 +149,12 @@ fun MyBudgetApp(
                 MyBudgetAppShell(
                     preferences = preferences,
                     selectedBudgetBookId = selectedBudgetBookId,
+                    currentBudgetBook = currentBudgetBook,
                     categories = categories,
                     transactions = transactions,
                     transactionRepository = transactionRepository,
                     appPreferencesRepository = appPreferencesRepository,
+                    budgetBookRepository = budgetBookRepository,
                     clock = clock,
                 )
             } else {
@@ -215,10 +222,12 @@ private enum class AppDestination(
 private fun MyBudgetAppShell(
     preferences: AppPreferences,
     selectedBudgetBookId: Long?,
+    currentBudgetBook: BudgetBookEntity?,
     categories: List<CategoryEntity>,
     transactions: List<TransactionEntity>,
     transactionRepository: TransactionRepository,
     appPreferencesRepository: AppPreferencesRepository,
+    budgetBookRepository: BudgetBookRepository,
     clock: Clock,
 ) {
     val navController = rememberNavController()
@@ -327,7 +336,9 @@ private fun MyBudgetAppShell(
                 composable(AppDestination.Settings.route) {
                     SettingsScreen(
                         preferences = preferences,
+                        currentBudgetBook = currentBudgetBook,
                         appPreferencesRepository = appPreferencesRepository,
+                        budgetBookRepository = budgetBookRepository,
                     )
                 }
             }
@@ -820,16 +831,72 @@ private fun ReportsScreen(
 @Composable
 private fun SettingsScreen(
     preferences: AppPreferences,
+    currentBudgetBook: BudgetBookEntity?,
     appPreferencesRepository: AppPreferencesRepository,
+    budgetBookRepository: BudgetBookRepository,
 ) {
     val scope = rememberCoroutineScope()
     val versionName = rememberAppVersionName() ?: stringResource(R.string.version_unavailable)
+    var budgetBookName by rememberSaveable(currentBudgetBook?.id) {
+        mutableStateOf(currentBudgetBook?.title.orEmpty())
+    }
+    var hasSavedBudgetBookName by rememberSaveable(currentBudgetBook?.id) {
+        mutableStateOf(false)
+    }
+    val trimmedBudgetBookName = budgetBookName.trim()
+    val canSaveBudgetBookName = currentBudgetBook != null &&
+        trimmedBudgetBookName.isNotBlank() &&
+        trimmedBudgetBookName != currentBudgetBook.title
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        item {
+            SettingsSection(
+                title = stringResource(R.string.settings_budget_book),
+                supportingText = stringResource(R.string.budget_book_name_helper),
+            ) {
+                OutlinedTextField(
+                    value = budgetBookName,
+                    onValueChange = {
+                        budgetBookName = it
+                        hasSavedBudgetBookName = false
+                    },
+                    label = { Text(stringResource(R.string.budget_book_name)) },
+                    supportingText = {
+                        Text(
+                            when {
+                                currentBudgetBook == null -> stringResource(R.string.preparing_budget_book)
+                                trimmedBudgetBookName.isBlank() -> stringResource(R.string.budget_book_name_required)
+                                hasSavedBudgetBookName -> stringResource(R.string.budget_book_name_saved)
+                                else -> stringResource(R.string.budget_book_name_settings_helper)
+                            },
+                        )
+                    },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                )
+                Button(
+                    onClick = {
+                        currentBudgetBook?.id?.let { budgetBookId ->
+                            scope.launch {
+                                budgetBookRepository.renameBudgetBook(budgetBookId, budgetBookName)
+                                budgetBookName = trimmedBudgetBookName
+                                hasSavedBudgetBookName = true
+                            }
+                        }
+                    },
+                    enabled = canSaveBudgetBookName,
+                    modifier = Modifier.padding(top = 12.dp),
+                ) {
+                    Text(stringResource(R.string.save))
+                }
+            }
+        }
         item {
             SettingsSection(title = stringResource(R.string.settings_appearance)) {
                 AppThemeMode.entries.forEach { mode ->
