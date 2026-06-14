@@ -33,4 +33,4 @@ google-services.json
 *.hprof
 
 # Others
-md_chat/
+.codex-remote-attachments/
