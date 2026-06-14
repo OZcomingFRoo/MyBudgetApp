@@ -1,5 +1,10 @@
 package com.example.mybudget.ui
 
+import android.content.Context
+import android.content.pm.PackageManager
+import android.content.res.Configuration
+import android.os.Build
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -54,14 +60,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -88,6 +99,8 @@ import java.time.Clock
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeParseException
+import java.time.format.TextStyle
+import java.util.Locale
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
@@ -108,25 +121,54 @@ fun MyBudgetApp(
         ),
     )
 
-    MyBudgetTheme(themeMode = preferences.themeMode) {
-        val selectedBudgetBookId = preferences.selectedBudgetBookId
-        val categories by remember(selectedBudgetBookId) {
-            selectedBudgetBookId?.let(categoryRepository::observeActiveForBudgetBook) ?: flowOf(emptyList())
-        }.collectAsState(initial = emptyList())
-        val transactions by remember(selectedBudgetBookId) {
-            selectedBudgetBookId?.let(transactionRepository::observeForBudgetBook) ?: flowOf(emptyList())
-        }.collectAsState(initial = emptyList())
+    LocalizedApp(languageMode = preferences.languageMode) {
+        MyBudgetTheme(themeMode = preferences.themeMode) {
+            val selectedBudgetBookId = preferences.selectedBudgetBookId
+            val categories by remember(selectedBudgetBookId) {
+                selectedBudgetBookId?.let(categoryRepository::observeActiveForBudgetBook) ?: flowOf(emptyList())
+            }.collectAsState(initial = emptyList())
+            val transactions by remember(selectedBudgetBookId) {
+                selectedBudgetBookId?.let(transactionRepository::observeForBudgetBook) ?: flowOf(emptyList())
+            }.collectAsState(initial = emptyList())
 
-        MyBudgetAppShell(
-            preferences = preferences,
-            selectedBudgetBookId = selectedBudgetBookId,
-            categories = categories,
-            transactions = transactions,
-            transactionRepository = transactionRepository,
-            appPreferencesRepository = appPreferencesRepository,
-            clock = clock,
-        )
+            MyBudgetAppShell(
+                preferences = preferences,
+                selectedBudgetBookId = selectedBudgetBookId,
+                categories = categories,
+                transactions = transactions,
+                transactionRepository = transactionRepository,
+                appPreferencesRepository = appPreferencesRepository,
+                clock = clock,
+            )
+        }
     }
+}
+
+@Composable
+private fun LocalizedApp(
+    languageMode: AppLanguageMode,
+    content: @Composable () -> Unit,
+) {
+    val baseContext = LocalContext.current
+    val systemLayoutDirection = LocalLayoutDirection.current
+    val localizedContext = remember(baseContext, languageMode) {
+        when (languageMode) {
+            AppLanguageMode.SYSTEM -> baseContext
+            AppLanguageMode.EN_US -> baseContext.withLocale(Locale.US)
+            AppLanguageMode.HE -> baseContext.withLocale(Locale.forLanguageTag("he"))
+        }
+    }
+    val layoutDirection = when (languageMode) {
+        AppLanguageMode.SYSTEM -> systemLayoutDirection
+        AppLanguageMode.EN_US -> LayoutDirection.Ltr
+        AppLanguageMode.HE -> LayoutDirection.Rtl
+    }
+
+    CompositionLocalProvider(
+        LocalContext provides localizedContext,
+        LocalLayoutDirection provides layoutDirection,
+        content = content,
+    )
 }
 
 private enum class AppDestination(
@@ -280,6 +322,8 @@ private fun DashboardScreen(
     val expenses = monthlyTransactions.total(TransactionType.EXPENSE)
     val remaining = income - expenses
     val categoryById = categories.associateBy { it.id }
+    val locale = LocalContext.current.resources.configuration.locales[0]
+    val monthName = month.month.getDisplayName(TextStyle.FULL_STANDALONE, locale)
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -288,7 +332,7 @@ private fun DashboardScreen(
     ) {
         item {
             Text(
-                text = stringResource(R.string.dashboard_month_label, month.month.name.lowercase().replaceFirstChar(Char::titlecase)),
+                text = stringResource(R.string.dashboard_month_label, monthName),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -752,6 +796,7 @@ private fun SettingsScreen(
     appPreferencesRepository: AppPreferencesRepository,
 ) {
     val scope = rememberCoroutineScope()
+    val versionName = rememberAppVersionName() ?: stringResource(R.string.version_unavailable)
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -759,7 +804,7 @@ private fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            SettingsSection(title = stringResource(R.string.theme)) {
+            SettingsSection(title = stringResource(R.string.settings_appearance)) {
                 AppThemeMode.entries.forEach { mode ->
                     RadioSettingRow(
                         label = mode.label(),
@@ -770,7 +815,7 @@ private fun SettingsScreen(
             }
         }
         item {
-            SettingsSection(title = stringResource(R.string.language)) {
+            SettingsSection(title = stringResource(R.string.settings_language)) {
                 AppLanguageMode.entries.forEach { mode ->
                     RadioSettingRow(
                         label = mode.label(),
@@ -781,7 +826,10 @@ private fun SettingsScreen(
             }
         }
         item {
-            SettingsSection(title = stringResource(R.string.default_transaction_type)) {
+            SettingsSection(
+                title = stringResource(R.string.settings_transaction_defaults),
+                supportingText = stringResource(R.string.default_transaction_type_helper),
+            ) {
                 DefaultTransactionType.entries.forEach { type ->
                     RadioSettingRow(
                         label = type.label(),
@@ -789,6 +837,22 @@ private fun SettingsScreen(
                         onClick = { scope.launch { appPreferencesRepository.setDefaultTransactionType(type) } },
                     )
                 }
+            }
+        }
+        item {
+            SettingsSection(title = stringResource(R.string.settings_data_privacy)) {
+                SettingsInfoText(text = stringResource(R.string.data_privacy_local_only))
+            }
+        }
+        item {
+            SettingsSection(title = stringResource(R.string.settings_about)) {
+                SettingsInfoText(
+                    text = stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                SettingsInfoText(text = stringResource(R.string.app_version, versionName))
+                SettingsInfoText(text = stringResource(R.string.about_app_purpose))
             }
         }
     }
@@ -999,15 +1063,28 @@ private fun EmptyState(
 @Composable
 private fun SettingsSection(
     title: String,
+    supportingText: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+        ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
+            if (supportingText != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = supportingText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
             HorizontalDivider()
             content()
@@ -1016,22 +1093,73 @@ private fun SettingsSection(
 }
 
 @Composable
+private fun SettingsInfoText(
+    text: String,
+    style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.bodyMedium,
+    color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+) {
+    Text(
+        text = text,
+        style = style,
+        color = color,
+        modifier = Modifier.padding(top = 12.dp),
+    )
+}
+
+@Composable
 private fun RadioSettingRow(
     label: String,
+    supportingText: String? = null,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .selectable(selected = selected, onClick = onClick)
+            .heightIn(min = 56.dp)
+            .selectable(
+                selected = selected,
+                onClick = onClick,
+                role = Role.RadioButton,
+            )
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        RadioButton(selected = selected, onClick = onClick)
-        Text(text = label, modifier = Modifier.padding(start = 8.dp))
+        RadioButton(selected = selected, onClick = null)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = label, style = MaterialTheme.typography.bodyLarge)
+            if (supportingText != null) {
+                Text(
+                    text = supportingText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
+
+@Composable
+private fun rememberAppVersionName(): String? {
+    val context = LocalContext.current
+    return remember(context) { context.packageVersionName() }
+}
+
+private fun Context.withLocale(locale: Locale): Context {
+    val configuration = Configuration(resources.configuration)
+    configuration.setLocale(locale)
+    return createConfigurationContext(configuration)
+}
+
+private fun Context.packageVersionName(): String? = runCatching {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0)).versionName
+    } else {
+        @Suppress("DEPRECATION")
+        packageManager.getPackageInfo(packageName, 0).versionName
+    }
+}.getOrNull()?.takeIf { it.isNotBlank() }
 
 private fun List<TransactionEntity>.total(type: TransactionType): Long =
     filter { it.type == type }.sumOf { it.amountMinor }
