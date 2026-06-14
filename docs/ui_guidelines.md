@@ -92,6 +92,8 @@ Use meaningful colors for income, expenses, warnings, and budget status, but do 
 
 Categories must have their own color and icon. Users should be able to edit category color and icon.
 
+The Categories screen should present categories as a visual manager rather than a plain row list. Use an Expense/Income switch, a 3-column phone grid, colored circular icons, concise labels, and a Create tile. Create/edit should use a Material 3 bottom sheet with title, type, icon, and color controls. Category deletion should archive/hide the category so existing records remain intact.
+
 Budget rows should show progress indicators. Empty states should be simple and actionable, such as showing that no transactions exist yet and offering an add action.
 
 ## Forms And Validation

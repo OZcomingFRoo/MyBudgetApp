@@ -66,11 +66,15 @@ No files are globally protected, but agents must preserve unrelated user changes
 
 ## Android Direction
 
+The production Android namespace and Google Play application ID are
+`com.ozcomingfroo.mybudget`. Do not use the old starter namespace for new
+code, tests, generated references, or run configurations.
+
 Use Jetpack Compose for UI.
 
 Use MVVM with simple clean/layered boundaries. Keep business logic outside UI and view models when practical.
 
-Use a feature-first package structure, with shared `data`, `domain`, and `core` packages where useful.
+Use a feature-first package structure, with shared `data`, `domain`, and `core` packages where useful. The main app shell lives under `ui/MyBudgetApp.kt`; dedicated Compose screens live under `ui/dashboard`, `ui/transactions`, `ui/history`, `ui/categories`, `ui/reports`, and `ui/settings`, with shared UI helpers under `ui/components` and `ui/util`.
 
 Use Room for persistent app data. The current local data model is `BudgetBook`, `Category`, `Transaction`, and `RecurringTransaction`. Do not add a formal `Budget` model unless explicitly requested.
 
@@ -93,6 +97,11 @@ For UI design, implementation, polish, or review tasks, use the repo-local `andr
 Prefer Material 3 Compose components.
 
 Use a simple hamburger/drawer menu for navigation between main screens.
+
+Categories should use a visual grid manager: Expense/Income switching, three
+columns on phones, category color/icon display, category title labels, and a
+bottom-sheet create/edit flow. Deleting a category should archive/hide it
+rather than hard-delete it.
 
 Support two app themes:
 

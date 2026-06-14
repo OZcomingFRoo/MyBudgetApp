@@ -9,8 +9,8 @@ The app should make it easier for users to understand where their money goes, tr
 - Platform: Android
 - UI stack: Kotlin with Jetpack Compose and Material 3
 - App module: `app`
-- Package namespace: `com.example.mybudget`
-- Current implementation: generated starter UI with a basic `MainActivity`
+- Package namespace and application ID: `com.ozcomingfroo.mybudget`
+- Current implementation: local-first budgeting app with Compose navigation, dashboard, transaction entry, history, category management, reports, settings, and first-launch onboarding
 
 ## Product Direction
 
