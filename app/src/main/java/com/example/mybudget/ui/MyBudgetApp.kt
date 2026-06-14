@@ -36,6 +36,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
@@ -65,8 +66,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -103,6 +106,9 @@ import java.time.format.TextStyle
 import java.util.Locale
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+
+@Suppress("DEPRECATION")
+private val HebrewLocale = Locale("iw")
 
 @Composable
 fun MyBudgetApp(
@@ -150,12 +156,20 @@ private fun LocalizedApp(
     content: @Composable () -> Unit,
 ) {
     val baseContext = LocalContext.current
+    val systemConfiguration = LocalConfiguration.current
     val systemLayoutDirection = LocalLayoutDirection.current
-    val localizedContext = remember(baseContext, languageMode) {
+    val localizedConfiguration = remember(systemConfiguration, languageMode) {
         when (languageMode) {
-            AppLanguageMode.SYSTEM -> baseContext
-            AppLanguageMode.EN_US -> baseContext.withLocale(Locale.US)
-            AppLanguageMode.HE -> baseContext.withLocale(Locale.forLanguageTag("he"))
+            AppLanguageMode.SYSTEM -> systemConfiguration
+            AppLanguageMode.EN_US -> systemConfiguration.withLocale(Locale.US)
+            AppLanguageMode.HE -> systemConfiguration.withLocale(HebrewLocale)
+        }
+    }
+    val localizedContext = remember(baseContext, localizedConfiguration, languageMode) {
+        if (languageMode == AppLanguageMode.SYSTEM) {
+            baseContext
+        } else {
+            baseContext.createConfigurationContext(localizedConfiguration)
         }
     }
     val layoutDirection = when (languageMode) {
@@ -166,6 +180,7 @@ private fun LocalizedApp(
 
     CompositionLocalProvider(
         LocalContext provides localizedContext,
+        LocalConfiguration provides localizedConfiguration,
         LocalLayoutDirection provides layoutDirection,
         content = content,
     )
@@ -241,9 +256,9 @@ private fun MyBudgetAppShell(
                         IconButton(
                             onClick = { scope.launch { drawerState.open() } },
                         ) {
-                            Text(
-                                text = stringResource(R.string.menu_button),
-                                style = MaterialTheme.typography.titleLarge,
+                            Icon(
+                                painter = painterResource(R.drawable.ic_menu_24),
+                                contentDescription = stringResource(R.string.menu_button),
                             )
                         }
                     },
@@ -1146,10 +1161,10 @@ private fun rememberAppVersionName(): String? {
     return remember(context) { context.packageVersionName() }
 }
 
-private fun Context.withLocale(locale: Locale): Context {
-    val configuration = Configuration(resources.configuration)
+private fun Configuration.withLocale(locale: Locale): Configuration {
+    val configuration = Configuration(this)
     configuration.setLocale(locale)
-    return createConfigurationContext(configuration)
+    return configuration
 }
 
 private fun Context.packageVersionName(): String? = runCatching {
