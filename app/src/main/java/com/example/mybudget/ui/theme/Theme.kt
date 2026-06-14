@@ -1,51 +1,56 @@
 package com.example.mybudget.ui.theme
 
-import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import com.example.mybudget.data.preferences.AppThemeMode
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = BudgetWarmYellow,
+    onPrimary = Color.Black,
+    primaryContainer = BudgetWarmYellowContainer,
+    onPrimaryContainer = Color(0xFFFFE8A8),
+    secondary = BudgetMint,
+    tertiary = WarningAmber,
+    background = BudgetBlack,
+    onBackground = Color(0xFFE7EEE8),
+    surface = BudgetDarkSurface,
+    onSurface = Color(0xFFE7EEE8),
+    surfaceVariant = Color(0xFF26312A),
+    onSurfaceVariant = Color(0xFFC2CEC5),
+    error = Color(0xFFFFB4AB),
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
+    primary = BudgetGreen,
     onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primaryContainer = BudgetGreenContainer,
+    onPrimaryContainer = BudgetGreenDark,
+    secondary = BudgetMint,
+    tertiary = WarningAmber,
+    background = BudgetSurface,
+    onBackground = Color(0xFF17201A),
+    surface = Color.White,
+    onSurface = Color(0xFF17201A),
+    surfaceVariant = Color(0xFFE7EFE7),
+    onSurfaceVariant = Color(0xFF4C5B50),
+    error = ExpenseRed,
 )
 
 @Composable
 fun MyBudgetTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     content: @Composable () -> Unit
 ) {
+    val darkTheme = when (themeMode) {
+        AppThemeMode.DEFAULT -> false
+        AppThemeMode.NIGHT -> true
+        AppThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }

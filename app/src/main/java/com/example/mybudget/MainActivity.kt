@@ -5,16 +5,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.mybudget.data.LocalDataInitializer
-import com.example.mybudget.ui.theme.MyBudgetTheme
+import com.example.mybudget.data.preferences.AppPreferencesRepository
+import com.example.mybudget.data.repository.CategoryRepository
+import com.example.mybudget.data.repository.TransactionRepository
+import com.example.mybudget.ui.MyBudgetApp
 import dagger.hilt.android.AndroidEntryPoint
+import java.time.Clock
 import javax.inject.Inject
 import kotlinx.coroutines.launch
 
@@ -23,6 +20,18 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var localDataInitializer: LocalDataInitializer
 
+    @Inject
+    lateinit var transactionRepository: TransactionRepository
+
+    @Inject
+    lateinit var categoryRepository: CategoryRepository
+
+    @Inject
+    lateinit var appPreferencesRepository: AppPreferencesRepository
+
+    @Inject
+    lateinit var clock: Clock
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -30,30 +39,12 @@ class MainActivity : ComponentActivity() {
             localDataInitializer.initialize()
         }
         setContent {
-            MyBudgetTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
+            MyBudgetApp(
+                transactionRepository = transactionRepository,
+                categoryRepository = categoryRepository,
+                appPreferencesRepository = appPreferencesRepository,
+                clock = clock,
+            )
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    MyBudgetTheme {
-        Greeting("Android")
     }
 }
