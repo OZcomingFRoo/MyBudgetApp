@@ -103,6 +103,11 @@ import com.example.mybudget.data.repository.BudgetBookRepository
 import com.example.mybudget.data.repository.CategoryRepository
 import com.example.mybudget.data.repository.TransactionRepository
 import com.example.mybudget.ui.onboarding.OnboardingScreen
+import com.example.mybudget.ui.theme.BudgetBlack
+import com.example.mybudget.ui.theme.BudgetGreen
+import com.example.mybudget.ui.theme.BudgetGreenDark
+import com.example.mybudget.ui.theme.BudgetSurface
+import com.example.mybudget.ui.theme.BudgetWarmYellow
 import com.example.mybudget.ui.theme.ExpenseRed
 import com.example.mybudget.ui.theme.IncomeGreen
 import com.example.mybudget.ui.theme.MyBudgetTheme
@@ -913,13 +918,12 @@ private fun SettingsScreen(
         }
         item {
             SettingsSection(title = stringResource(R.string.settings_appearance)) {
-                AppThemeMode.entries.forEach { mode ->
-                    RadioSettingRow(
-                        label = mode.label(),
-                        selected = preferences.themeMode == mode,
-                        onClick = { scope.launch { appPreferencesRepository.setThemeMode(mode) } },
-                    )
-                }
+                ThemeSelector(
+                    selectedThemeMode = preferences.themeMode,
+                    onThemeModeSelected = { mode ->
+                        scope.launch { appPreferencesRepository.setThemeMode(mode) }
+                    },
+                )
             }
         }
         item {
@@ -1211,6 +1215,109 @@ private fun SettingsInfoText(
         color = color,
         modifier = Modifier.padding(top = 12.dp),
     )
+}
+
+@Composable
+private fun ThemeSelector(
+    selectedThemeMode: AppThemeMode,
+    onThemeModeSelected: (AppThemeMode) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        ThemeTile(
+            mode = AppThemeMode.DEFAULT,
+            previewBackgroundColor = BudgetSurface,
+            activeColor = BudgetGreen,
+            labelColor = BudgetGreenDark,
+            selected = selectedThemeMode == AppThemeMode.DEFAULT,
+            onClick = { onThemeModeSelected(AppThemeMode.DEFAULT) },
+            modifier = Modifier.weight(1f),
+        )
+        ThemeTile(
+            mode = AppThemeMode.NIGHT,
+            previewBackgroundColor = BudgetBlack,
+            activeColor = BudgetWarmYellow,
+            labelColor = BudgetWarmYellow,
+            selected = selectedThemeMode == AppThemeMode.NIGHT,
+            onClick = { onThemeModeSelected(AppThemeMode.NIGHT) },
+            modifier = Modifier.weight(1f),
+        )
+    }
+    RadioSettingRow(
+        label = AppThemeMode.SYSTEM.label(),
+        selected = selectedThemeMode == AppThemeMode.SYSTEM,
+        onClick = { onThemeModeSelected(AppThemeMode.SYSTEM) },
+    )
+}
+
+@Composable
+private fun ThemeTile(
+    mode: AppThemeMode,
+    previewBackgroundColor: Color,
+    activeColor: Color,
+    labelColor: Color,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val tileShape = RoundedCornerShape(8.dp)
+    val borderColor = if (selected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.outline
+    }
+
+    Card(
+        modifier = modifier
+            .heightIn(min = 120.dp)
+            .selectable(
+                selected = selected,
+                onClick = onClick,
+                role = Role.RadioButton,
+            ),
+        shape = tileShape,
+        colors = CardDefaults.cardColors(containerColor = previewBackgroundColor),
+        border = BorderStroke(if (selected) 2.dp else 1.dp, borderColor),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(36.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                RadioButton(
+                    selected = selected,
+                    onClick = null,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .width(32.dp)
+                    .height(32.dp)
+                    .clip(CircleShape)
+                    .background(activeColor),
+            )
+            Text(
+                text = mode.label(),
+                style = MaterialTheme.typography.labelLarge,
+                color = labelColor,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
 }
 
 @Composable
