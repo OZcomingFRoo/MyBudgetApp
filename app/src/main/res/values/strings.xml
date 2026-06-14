@@ -52,6 +52,16 @@
     <string name="language_system">Use system setting</string>
     <string name="language_english_us">English US</string>
     <string name="language_hebrew">Hebrew</string>
+    <string name="skip">Skip</string>
+    <string name="start_budgeting">Start budgeting</string>
+    <string name="onboarding_title">Set up MyBudget</string>
+    <string name="onboarding_body">Choose a few defaults now. You can change them later in Settings.</string>
+    <string name="onboarding_budget_book_title">Budget book</string>
+    <string name="budget_book_name">Budget book name</string>
+    <string name="budget_book_name_helper">Use Personal or rename it for your household, freelance work, or small business.</string>
+    <string name="preparing_budget_book">Preparing your budget book...</string>
+    <string name="onboarding_privacy_title">Local-only data</string>
+    <string name="onboarding_privacy_body">Your budget data stays on this device for now.</string>
     <string name="default_transaction_type">Default transaction type</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_language">Language</string>

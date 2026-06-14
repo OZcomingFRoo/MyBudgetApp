@@ -63,4 +63,14 @@
     <string name="app_version">גרסה %1$s</string>
     <string name="version_unavailable">לא זמינה</string>
     <string name="about_app_purpose">ניהול תקציב אישי להכנסות והוצאות. מקומי בלבד כרגע.</string>
+    <string name="skip">דלג</string>
+    <string name="start_budgeting">התחלת שימוש</string>
+    <string name="onboarding_title">הגדרת MyBudget</string>
+    <string name="onboarding_body">בחר כמה ברירות מחדל עכשיו. אפשר לשנות אותן אחר כך בהגדרות.</string>
+    <string name="onboarding_budget_book_title">ספר תקציב</string>
+    <string name="budget_book_name">שם ספר התקציב</string>
+    <string name="budget_book_name_helper">אפשר להשתמש ב-Personal או לשנות לשם של הבית, העבודה העצמאית או העסק הקטן.</string>
+    <string name="preparing_budget_book">מכינים את ספר התקציב שלך...</string>
+    <string name="onboarding_privacy_title">נתונים מקומיים בלבד</string>
+    <string name="onboarding_privacy_body">נתוני התקציב נשמרים במכשיר הזה כרגע.</string>
 </resources>

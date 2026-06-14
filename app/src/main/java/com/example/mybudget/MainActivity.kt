@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
 import com.example.mybudget.data.LocalDataInitializer
 import com.example.mybudget.data.preferences.AppPreferencesRepository
+import com.example.mybudget.data.repository.BudgetBookRepository
 import com.example.mybudget.data.repository.CategoryRepository
 import com.example.mybudget.data.repository.TransactionRepository
 import com.example.mybudget.ui.MyBudgetApp
@@ -27,6 +28,9 @@ class MainActivity : ComponentActivity() {
     lateinit var categoryRepository: CategoryRepository
 
     @Inject
+    lateinit var budgetBookRepository: BudgetBookRepository
+
+    @Inject
     lateinit var appPreferencesRepository: AppPreferencesRepository
 
     @Inject
@@ -42,6 +46,7 @@ class MainActivity : ComponentActivity() {
             MyBudgetApp(
                 transactionRepository = transactionRepository,
                 categoryRepository = categoryRepository,
+                budgetBookRepository = budgetBookRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 clock = clock,
             )

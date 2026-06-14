@@ -93,8 +93,10 @@ import com.example.mybudget.data.preferences.AppPreferences
 import com.example.mybudget.data.preferences.AppPreferencesRepository
 import com.example.mybudget.data.preferences.AppThemeMode
 import com.example.mybudget.data.preferences.DefaultTransactionType
+import com.example.mybudget.data.repository.BudgetBookRepository
 import com.example.mybudget.data.repository.CategoryRepository
 import com.example.mybudget.data.repository.TransactionRepository
+import com.example.mybudget.ui.onboarding.OnboardingScreen
 import com.example.mybudget.ui.theme.ExpenseRed
 import com.example.mybudget.ui.theme.IncomeGreen
 import com.example.mybudget.ui.theme.MyBudgetTheme
@@ -114,14 +116,15 @@ private val HebrewLocale = Locale("iw")
 fun MyBudgetApp(
     transactionRepository: TransactionRepository,
     categoryRepository: CategoryRepository,
+    budgetBookRepository: BudgetBookRepository,
     appPreferencesRepository: AppPreferencesRepository,
     clock: Clock,
 ) {
     val preferences by appPreferencesRepository.preferences.collectAsState(
         initial = AppPreferences(
             selectedBudgetBookId = null,
-            themeMode = AppThemeMode.SYSTEM,
-            languageMode = AppLanguageMode.SYSTEM,
+            themeMode = AppThemeMode.DEFAULT,
+            languageMode = AppLanguageMode.HE,
             hasCompletedOnboarding = false,
             defaultTransactionType = DefaultTransactionType.EXPENSE,
         ),
@@ -137,15 +140,24 @@ fun MyBudgetApp(
                 selectedBudgetBookId?.let(transactionRepository::observeForBudgetBook) ?: flowOf(emptyList())
             }.collectAsState(initial = emptyList())
 
-            MyBudgetAppShell(
-                preferences = preferences,
-                selectedBudgetBookId = selectedBudgetBookId,
-                categories = categories,
-                transactions = transactions,
-                transactionRepository = transactionRepository,
-                appPreferencesRepository = appPreferencesRepository,
-                clock = clock,
-            )
+            if (preferences.hasCompletedOnboarding) {
+                MyBudgetAppShell(
+                    preferences = preferences,
+                    selectedBudgetBookId = selectedBudgetBookId,
+                    categories = categories,
+                    transactions = transactions,
+                    transactionRepository = transactionRepository,
+                    appPreferencesRepository = appPreferencesRepository,
+                    clock = clock,
+                )
+            } else {
+                OnboardingScreen(
+                    preferences = preferences,
+                    selectedBudgetBookId = selectedBudgetBookId,
+                    appPreferencesRepository = appPreferencesRepository,
+                    budgetBookRepository = budgetBookRepository,
+                )
+            }
         }
     }
 }

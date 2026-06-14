@@ -48,8 +48,8 @@ class AppPreferencesRepositoryTest {
         val preferences = repository.getPreferences()
 
         assertNull(preferences.selectedBudgetBookId)
-        assertEquals(AppThemeMode.SYSTEM, preferences.themeMode)
-        assertEquals(AppLanguageMode.SYSTEM, preferences.languageMode)
+        assertEquals(AppThemeMode.DEFAULT, preferences.themeMode)
+        assertEquals(AppLanguageMode.HE, preferences.languageMode)
         assertFalse(preferences.hasCompletedOnboarding)
         assertEquals(DefaultTransactionType.EXPENSE, preferences.defaultTransactionType)
     }
@@ -81,8 +81,8 @@ class AppPreferencesRepositoryTest {
 
         val preferences = repository.getPreferences()
 
-        assertEquals(AppThemeMode.SYSTEM, preferences.themeMode)
-        assertEquals(AppLanguageMode.SYSTEM, preferences.languageMode)
+        assertEquals(AppThemeMode.DEFAULT, preferences.themeMode)
+        assertEquals(AppLanguageMode.HE, preferences.languageMode)
         assertEquals(DefaultTransactionType.EXPENSE, preferences.defaultTransactionType)
     }
 }

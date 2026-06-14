@@ -22,6 +22,19 @@ class BudgetBookRepository @Inject constructor(
     fun observeActiveBudgetBooks(): Flow<List<BudgetBookEntity>> =
         budgetBookDao.observeActiveBudgetBooks()
 
+    suspend fun renameBudgetBook(id: Long, title: String) {
+        val trimmedTitle = title.trim()
+        if (trimmedTitle.isBlank()) return
+
+        val existing = budgetBookDao.getById(id) ?: return
+        budgetBookDao.update(
+            existing.copy(
+                title = trimmedTitle,
+                updatedAt = clock.instant(),
+            ),
+        )
+    }
+
     suspend fun createBudgetBook(
         title: String,
         description: String? = null,

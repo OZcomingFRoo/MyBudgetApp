@@ -8,6 +8,6 @@ enum class AppThemeMode {
 
     companion object {
         fun fromStorageValue(value: String?): AppThemeMode =
-            entries.firstOrNull { it.name == value } ?: SYSTEM
+            entries.firstOrNull { it.name == value } ?: DEFAULT
     }
 }

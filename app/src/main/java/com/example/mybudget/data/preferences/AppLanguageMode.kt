@@ -8,6 +8,6 @@ enum class AppLanguageMode {
 
     companion object {
         fun fromStorageValue(value: String?): AppLanguageMode =
-            entries.firstOrNull { it.name == value } ?: SYSTEM
+            entries.firstOrNull { it.name == value } ?: HE
     }
 }

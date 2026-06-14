@@ -8,22 +8,22 @@ object StarterCategories {
     fun createForBudgetBook(budgetBookId: Long, now: Instant): List<CategoryEntity> {
         val expenseCategories = listOf(
             StarterCategory("Groceries", "shopping_cart", "#2E7D32"),
-            StarterCategory("Restaurants", "restaurant", "#C2410C"),
-            StarterCategory("Transport", "directions_car", "#2563EB"),
-            StarterCategory("Fuel", "local_gas_station", "#7C3AED"),
-            StarterCategory("Rent", "home", "#334155"),
+            StarterCategory("Restaurants & Coffee", "restaurant", "#C2410C"),
+            StarterCategory("Rent / Mortgage", "home", "#334155"),
             StarterCategory("Utilities", "receipt", "#0891B2"),
-            StarterCategory("Health", "medical_services", "#DC2626"),
-            StarterCategory("Entertainment", "movie", "#DB2777"),
+            StarterCategory("Phone & Internet", "phone_android", "#2563EB"),
+            StarterCategory("Transportation", "directions_car", "#7C3AED"),
+            StarterCategory("Health & Medical", "medical_services", "#DC2626"),
             StarterCategory("Shopping", "shopping_bag", "#4F46E5"),
-            StarterCategory("Other", "category", "#64748B"),
+            StarterCategory("Entertainment", "movie", "#DB2777"),
+            StarterCategory("Other Expense", "category", "#64748B"),
         )
         val incomeCategories = listOf(
-            StarterCategory("Paycheck", "payments", "#15803D"),
-            StarterCategory("Freelance", "work", "#0F766E"),
-            StarterCategory("Sale", "sell", "#0369A1"),
-            StarterCategory("Refund", "undo", "#65A30D"),
-            StarterCategory("Gift", "card_giftcard", "#BE185D"),
+            StarterCategory("Salary", "payments", "#15803D"),
+            StarterCategory("Freelance / Business", "work", "#0F766E"),
+            StarterCategory("Tips / Cash", "attach_money", "#0369A1"),
+            StarterCategory("Refunds", "undo", "#65A30D"),
+            StarterCategory("Gifts Received", "card_giftcard", "#BE185D"),
             StarterCategory("Other Income", "category", "#64748B"),
         )
 
