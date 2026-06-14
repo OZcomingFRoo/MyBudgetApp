@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MyBudget</string>
+    <string name="app_name">תקציב חיסכון</string>
     <string name="nav_dashboard">לוח בקרה</string>
     <string name="nav_add_transaction">הוספת פעולה</string>
     <string name="nav_history">היסטוריה</string>

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MyBudget</string>
+    <string name="app_name">My Budget</string>
     <string name="nav_dashboard">Dashboard</string>
     <string name="nav_add_transaction">Add Transaction</string>
     <string name="nav_history">History</string>
