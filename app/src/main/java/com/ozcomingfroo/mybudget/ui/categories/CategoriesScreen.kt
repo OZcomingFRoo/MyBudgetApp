@@ -162,7 +162,11 @@ internal fun CategoriesScreen(
     var editingCategory by remember { mutableStateOf<CategoryEntity?>(null) }
     var editorInitialType by rememberSaveable { mutableStateOf(CategoryType.EXPENSE) }
     var showEditor by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val visibleCategories = categories.filter { it.type == selectedType || it.type == CategoryType.BOTH }
+    val createdMessage = stringResource(R.string.category_created)
+    val updatedMessage = stringResource(R.string.category_updated)
+    val deletedMessage = stringResource(R.string.category_deleted)
 
     Column(
         modifier = Modifier
@@ -221,12 +225,43 @@ internal fun CategoriesScreen(
 
     if (showEditor) {
         CategoryEditorSheet(
-            selectedBudgetBookId = selectedBudgetBookId,
             category = editingCategory,
             initialType = editorInitialType,
-            categories = categories,
-            categoryRepository = categoryRepository,
-            snackbarHostState = snackbarHostState,
+            onSave = { form ->
+                scope.launch {
+                    val category = editingCategory
+                    if (category == null) {
+                        categoryRepository.createCategory(
+                            budgetBookId = selectedBudgetBookId ?: return@launch,
+                            title = form.title.trim(),
+                            type = form.type,
+                            iconName = form.iconName,
+                            color = form.color,
+                            sortOrder = (categories.maxOfOrNull { it.sortOrder } ?: -1) + 1,
+                        )
+                        showEditor = false
+                        snackbarHostState.showSnackbar(createdMessage)
+                    } else {
+                        categoryRepository.update(
+                            category.copy(
+                                title = form.title.trim(),
+                                type = form.type,
+                                iconName = form.iconName,
+                                color = form.color,
+                            ),
+                        )
+                        showEditor = false
+                        snackbarHostState.showSnackbar(updatedMessage)
+                    }
+                }
+            },
+            onDelete = { category ->
+                scope.launch {
+                    categoryRepository.archive(category.id)
+                    showEditor = false
+                    snackbarHostState.showSnackbar(deletedMessage)
+                }
+            },
             onDismiss = { showEditor = false },
         )
     }
@@ -234,34 +269,54 @@ internal fun CategoriesScreen(
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-private fun CategoryTypeSwitch(
+internal fun CategoryTypeSwitch(
     selectedType: CategoryType,
     onTypeSelected: (CategoryType) -> Unit,
     modifier: Modifier = Modifier,
+    labels: CategoryTypeSwitchLabels = CategoryTypeSwitchLabels(
+        expense = stringResource(R.string.expense),
+        income = stringResource(R.string.income),
+    ),
 ) {
     val types = listOf(CategoryType.EXPENSE, CategoryType.INCOME)
+    val contentLayoutDirection = LocalLayoutDirection.current
 
-    SingleChoiceSegmentedButtonRow(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp),
-    ) {
-        types.forEachIndexed { index, type ->
-            SegmentedButton(
-                selected = selectedType == type,
-                onClick = { onTypeSelected(type) },
-                shape = SegmentedButtonDefaults.itemShape(index = index, count = types.size),
-                icon = {},
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(
-                    text = type.label(),
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                )
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        SingleChoiceSegmentedButtonRow(
+            modifier = modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp),
+        ) {
+            types.forEachIndexed { index, type ->
+                SegmentedButton(
+                    selected = selectedType == type,
+                    onClick = { onTypeSelected(type) },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = types.size),
+                    icon = {},
+                    modifier = Modifier.weight(1f),
+                ) {
+                    CompositionLocalProvider(LocalLayoutDirection provides contentLayoutDirection) {
+                        Text(
+                            text = labels.labelFor(type),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
             }
         }
     }
+}
+
+internal data class CategoryTypeSwitchLabels(
+    val expense: String,
+    val income: String,
+)
+
+private fun CategoryTypeSwitchLabels.labelFor(type: CategoryType): String = when (type) {
+    CategoryType.EXPENSE -> expense
+    CategoryType.INCOME -> income
+    CategoryType.BOTH -> expense
 }
 
 @Composable
@@ -342,297 +397,6 @@ private fun CreateCategoryTile(
                 textAlign = TextAlign.Center,
                 maxLines = 2,
             )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CategoryEditorSheet(
-    selectedBudgetBookId: Long?,
-    category: CategoryEntity?,
-    initialType: CategoryType,
-    categories: List<CategoryEntity>,
-    categoryRepository: CategoryRepository,
-    snackbarHostState: SnackbarHostState,
-    onDismiss: () -> Unit,
-) {
-    val scope = rememberCoroutineScope()
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var title by rememberSaveable(category?.id, initialType) {
-        mutableStateOf(category?.title.orEmpty())
-    }
-    var type by rememberSaveable(category?.id, initialType) {
-        mutableStateOf(
-            when (category?.type) {
-                CategoryType.INCOME -> CategoryType.INCOME
-                else -> initialType
-            },
-        )
-    }
-    var selectedIconName by rememberSaveable(category?.id, initialType) {
-        mutableStateOf(category?.iconName ?: CategoryIconOptions.first().iconName)
-    }
-    var selectedColor by rememberSaveable(category?.id, initialType) {
-        mutableStateOf(category?.color ?: CategoryColorOptions.first())
-    }
-    var showDeleteConfirmation by remember { mutableStateOf(false) }
-    val trimmedTitle = title.trim()
-    val canSave = trimmedTitle.isNotBlank() && (category != null || selectedBudgetBookId != null)
-    val createdMessage = stringResource(R.string.category_created)
-    val updatedMessage = stringResource(R.string.category_updated)
-    val deletedMessage = stringResource(R.string.category_deleted)
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-    ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                start = 20.dp,
-                end = 20.dp,
-                bottom = 28.dp,
-            ),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            item {
-                Text(
-                    text = stringResource(
-                        if (category == null) R.string.create_category else R.string.edit_category,
-                    ),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-            item {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text(stringResource(R.string.category_name)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            item {
-                Text(
-                    text = stringResource(R.string.category_type),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                CategoryTypeSwitch(
-                    selectedType = type,
-                    onTypeSelected = { type = it },
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-            item {
-                Text(
-                    text = stringResource(R.string.category_icon),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                CategoryIconPicker(
-                    selectedIconName = selectedIconName,
-                    onIconSelected = { selectedIconName = it },
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-            item {
-                Text(
-                    text = stringResource(R.string.category_color),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                CategoryColorPicker(
-                    selectedColor = selectedColor,
-                    onColorSelected = { selectedColor = it },
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (category != null) {
-                        TextButton(
-                            onClick = { showDeleteConfirmation = true },
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text(stringResource(R.string.delete))
-                        }
-                    } else {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-                    TextButton(onClick = onDismiss) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                    Button(
-                        onClick = {
-                            scope.launch {
-                                if (category == null) {
-                                    categoryRepository.createCategory(
-                                        budgetBookId = selectedBudgetBookId ?: return@launch,
-                                        title = trimmedTitle,
-                                        type = type,
-                                        iconName = selectedIconName,
-                                        color = selectedColor,
-                                        sortOrder = (categories.maxOfOrNull { it.sortOrder } ?: -1) + 1,
-                                    )
-                                    onDismiss()
-                                    snackbarHostState.showSnackbar(createdMessage)
-                                } else {
-                                    categoryRepository.update(
-                                        category.copy(
-                                            title = trimmedTitle,
-                                            type = type,
-                                            iconName = selectedIconName,
-                                            color = selectedColor,
-                                        ),
-                                    )
-                                    onDismiss()
-                                    snackbarHostState.showSnackbar(updatedMessage)
-                                }
-                            }
-                        },
-                        enabled = canSave,
-                    ) {
-                        Text(stringResource(R.string.save))
-                    }
-                }
-            }
-        }
-    }
-
-    if (showDeleteConfirmation && category != null) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirmation = false },
-            title = { Text(stringResource(R.string.delete_category_title)) },
-            text = { Text(stringResource(R.string.delete_category_message, category.title)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        scope.launch {
-                            categoryRepository.archive(category.id)
-                            showDeleteConfirmation = false
-                            onDismiss()
-                            snackbarHostState.showSnackbar(deletedMessage)
-                        }
-                    },
-                ) {
-                    Text(stringResource(R.string.delete))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirmation = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
-        )
-    }
-}
-
-@Composable
-private fun CategoryIconPicker(
-    selectedIconName: String,
-    onIconSelected: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        CategoryIconOptions.chunked(5).forEach { rowIcons ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                rowIcons.forEach { option ->
-                    CategoryIconOptionButton(
-                        option = option,
-                        selected = selectedIconName == option.iconName,
-                        onClick = { onIconSelected(option.iconName) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                repeat(5 - rowIcons.size) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CategoryIconOptionButton(
-    option: CategoryIconOption,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-    Card(
-        onClick = onClick,
-        modifier = modifier.aspectRatio(1f),
-        border = BorderStroke(if (selected) 2.dp else 1.dp, borderColor),
-        colors = CardDefaults.cardColors(
-            containerColor = if (selected) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surface
-            },
-        ),
-    ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = option.imageVector,
-                contentDescription = option.contentDescription,
-                tint = if (selected) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            )
-        }
-    }
-}
-
-@Composable
-private fun CategoryColorPicker(
-    selectedColor: String,
-    onColorSelected: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        CategoryColorOptions.chunked(6).forEach { rowColors ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                rowColors.forEach { colorValue ->
-                    val color = colorValue.toColor()
-                    val selected = selectedColor == colorValue
-                    Card(
-                        onClick = { onColorSelected(colorValue) },
-                        modifier = Modifier
-                            .weight(1f)
-                            .aspectRatio(1f),
-                        border = BorderStroke(
-                            if (selected) 3.dp else 1.dp,
-                            if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
-                        ),
-                        colors = CardDefaults.cardColors(containerColor = color),
-                    ) {}
-                }
-                repeat(6 - rowColors.size) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-            }
         }
     }
 }
