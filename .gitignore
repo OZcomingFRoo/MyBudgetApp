@@ -34,3 +34,5 @@ google-services.json
 
 # Others
 .codex-remote-attachments/
+.codex/tools/
+github-issues/
