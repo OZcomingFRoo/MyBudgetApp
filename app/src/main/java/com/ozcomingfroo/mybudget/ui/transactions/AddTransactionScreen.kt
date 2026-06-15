@@ -57,6 +57,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -103,6 +104,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -130,7 +132,6 @@ import com.ozcomingfroo.mybudget.data.preferences.AppThemeMode
 import com.ozcomingfroo.mybudget.data.preferences.DefaultTransactionType
 import com.ozcomingfroo.mybudget.data.repository.BudgetBookRepository
 import com.ozcomingfroo.mybudget.data.repository.CategoryRepository
-import com.ozcomingfroo.mybudget.data.repository.TransactionRepository
 import com.ozcomingfroo.mybudget.ui.onboarding.OnboardingScreen
 import com.ozcomingfroo.mybudget.ui.theme.BudgetBlack
 import com.ozcomingfroo.mybudget.ui.theme.BudgetGreen
@@ -146,6 +147,7 @@ import java.time.YearMonth
 import java.time.format.DateTimeParseException
 import java.time.format.TextStyle
 import java.util.Locale
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -156,7 +158,7 @@ internal fun AddTransactionScreen(
     selectedBudgetBookId: Long?,
     categories: List<CategoryEntity>,
     preferences: AppPreferences,
-    transactionRepository: TransactionRepository,
+    insertTransaction: suspend (TransactionEntity) -> Long,
     clock: Clock,
     onTransactionSaved: () -> Unit,
     snackbarHostState: SnackbarHostState,
@@ -190,12 +192,13 @@ internal fun AddTransactionScreen(
     var dateText by rememberSaveable { mutableStateOf(LocalDate.now(clock).toString()) }
     var categoryExpanded by remember { mutableStateOf(false) }
     var errorText by rememberSaveable { mutableStateOf<String?>(null) }
+    var isSaving by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val savedMessage = stringResource(R.string.transaction_saved)
     val missingBookMessage = stringResource(R.string.loading_budget_book)
     val invalidAmountMessage = stringResource(R.string.amount_error)
     val invalidDateMessage = stringResource(R.string.date_error)
     val missingCategoryMessage = stringResource(R.string.category_error)
+    val saveFailedMessage = stringResource(R.string.transaction_save_error)
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -220,7 +223,9 @@ internal fun AddTransactionScreen(
                 label = { Text(stringResource(R.string.amount)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("add_transaction_amount"),
             )
         }
         item {
@@ -294,6 +299,9 @@ internal fun AddTransactionScreen(
         item {
             Button(
                 onClick = {
+                    if (isSaving) {
+                        return@Button
+                    }
                     val budgetBookId = selectedBudgetBookId
                     if (budgetBookId == null) {
                         errorText = missingBookMessage
@@ -316,28 +324,47 @@ internal fun AddTransactionScreen(
                         errorText = missingCategoryMessage
                         return@Button
                     }
+                    errorText = null
+                    isSaving = true
                     scope.launch {
-                        val now = clock.instant()
-                        transactionRepository.insert(
-                            TransactionEntity(
-                                budgetBookId = budgetBookId,
-                                categoryId = categoryId,
-                                type = transactionType,
-                                amountMinor = amountMinor,
-                                title = titleText.trim().ifBlank { null },
-                                note = noteText.trim().ifBlank { null },
-                                occurredDate = date,
-                                createdAt = now,
-                                updatedAt = now,
-                            ),
-                        )
-                        snackbarHostState.showSnackbar(savedMessage)
-                        onTransactionSaved()
+                        try {
+                            val now = clock.instant()
+                            insertTransaction(
+                                TransactionEntity(
+                                    budgetBookId = budgetBookId,
+                                    categoryId = categoryId,
+                                    type = transactionType,
+                                    amountMinor = amountMinor,
+                                    title = titleText.trim().ifBlank { null },
+                                    note = noteText.trim().ifBlank { null },
+                                    occurredDate = date,
+                                    createdAt = now,
+                                    updatedAt = now,
+                                ),
+                            )
+                            onTransactionSaved()
+                        } catch (cancellation: CancellationException) {
+                            isSaving = false
+                            throw cancellation
+                        } catch (_: Exception) {
+                            isSaving = false
+                            snackbarHostState.showSnackbar(saveFailedMessage)
+                        }
                     }
                 },
-                enabled = amountText.isNotBlank() && selectedBudgetBookId != null,
-                modifier = Modifier.fillMaxWidth(),
+                enabled = amountText.isNotBlank() && selectedBudgetBookId != null && !isSaving,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("add_transaction_save"),
             ) {
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                }
                 Text(stringResource(R.string.save_transaction))
             }
         }

@@ -31,6 +31,7 @@
     <string name="note_optional">הערה, לא חובה</string>
     <string name="save_transaction">שמירת פעולה</string>
     <string name="transaction_saved">הפעולה נשמרה.</string>
+    <string name="transaction_save_error">לא ניתן לשמור את הפעולה. נסו שוב.</string>
     <string name="amount_error">יש להזין סכום תקין עם עד 2 ספרות אחרי הנקודה.</string>
     <string name="date_error">יש להזין תאריך תקין בפורמט YYYY-MM-DD.</string>
     <string name="category_error">יש לבחור קטגוריה.</string>

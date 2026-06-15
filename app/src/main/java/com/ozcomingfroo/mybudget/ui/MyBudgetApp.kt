@@ -267,7 +267,7 @@ private fun MyBudgetAppShell(
                         selectedBudgetBookId = selectedBudgetBookId,
                         categories = categories,
                         preferences = preferences,
-                        transactionRepository = transactionRepository,
+                        insertTransaction = transactionRepository::insert,
                         clock = clock,
                         onTransactionSaved = {
                             navController.navigate(AppDestination.Dashboard.route) {

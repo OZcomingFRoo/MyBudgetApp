@@ -31,6 +31,7 @@
     <string name="note_optional">Note optional</string>
     <string name="save_transaction">Save transaction</string>
     <string name="transaction_saved">Transaction saved.</string>
+    <string name="transaction_save_error">Could not save transaction. Try again.</string>
     <string name="amount_error">Enter a valid amount with up to 2 decimal digits.</string>
     <string name="date_error">Enter a valid date as YYYY-MM-DD.</string>
     <string name="category_error">Choose a category.</string>
