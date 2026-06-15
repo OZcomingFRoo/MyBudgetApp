@@ -28,7 +28,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -64,7 +63,6 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -76,6 +74,9 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -232,22 +233,33 @@ internal fun CategoriesScreen(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun CategoryTypeSwitch(
     selectedType: CategoryType,
     onTypeSelected: (CategoryType) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    val types = listOf(CategoryType.EXPENSE, CategoryType.INCOME)
+
+    SingleChoiceSegmentedButtonRow(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp),
     ) {
-        listOf(CategoryType.EXPENSE, CategoryType.INCOME).forEach { type ->
-            FilterChip(
+        types.forEachIndexed { index, type ->
+            SegmentedButton(
                 selected = selectedType == type,
                 onClick = { onTypeSelected(type) },
-                label = { Text(type.label()) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = types.size),
+                icon = {},
                 modifier = Modifier.weight(1f),
-            )
+            ) {
+                Text(
+                    text = type.label(),
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }
