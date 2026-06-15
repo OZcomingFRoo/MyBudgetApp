@@ -64,6 +64,8 @@ Agents must ask before installing dependencies, updating dependencies, or downlo
 
 No files are globally protected, but agents must preserve unrelated user changes and avoid broad refactors unless the user explicitly asks for them.
 
+For GitHub issue numbers, issue URLs, or requests to read/capture/archive issue context, use the repo-local `github-issue-capture` skill under `.agents/skills/github-issue-capture/`. In this workspace, prefer `.codex/tools/gh/bin/gh.exe` when `gh` is not on PATH.
+
 ## Android Direction
 
 The production Android namespace and Google Play application ID are
