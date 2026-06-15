@@ -705,6 +705,8 @@ private val CategoryColorOptions = listOf(
     "#BE185D",
     "#EA580C",
     "#64748B",
+    "#E7B84B",
+    "#EC4899",
 )
 
 private fun String.toCategoryIcon(): ImageVector =
