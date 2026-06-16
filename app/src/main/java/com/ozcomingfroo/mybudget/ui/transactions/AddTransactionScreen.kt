@@ -537,6 +537,358 @@ internal fun AddTransactionScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun EditTransactionSheet(
+    transaction: TransactionEntity,
+    categories: List<CategoryEntity>,
+    clock: Clock,
+    onDismiss: () -> Unit,
+    onTransactionUpdated: suspend (TransactionEntity) -> Unit,
+    snackbarHostState: SnackbarHostState,
+) {
+    var transactionType by rememberSaveable(transaction.id) { mutableStateOf(transaction.type) }
+    val availableCategories = categories.filter { category ->
+        when (transactionType) {
+            TransactionType.EXPENSE -> category.type == CategoryType.EXPENSE || category.type == CategoryType.BOTH
+            TransactionType.INCOME -> category.type == CategoryType.INCOME || category.type == CategoryType.BOTH
+        }
+    }
+    var selectedCategoryId by rememberSaveable(transaction.id, transactionType) {
+        mutableStateOf(transaction.categoryId ?: availableCategories.firstOrNull()?.id)
+    }
+    LaunchedEffect(availableCategories) {
+        if (selectedCategoryId !in availableCategories.map { it.id }) {
+            selectedCategoryId = availableCategories.firstOrNull()?.id
+        }
+    }
+
+    var amountText by rememberSaveable(transaction.id) {
+        mutableStateOf(MoneyFormatter.formatAmount(transaction.amountMinor))
+    }
+    var titleText by rememberSaveable(transaction.id) { mutableStateOf(transaction.title.orEmpty()) }
+    var noteText by rememberSaveable(transaction.id) { mutableStateOf(transaction.note.orEmpty()) }
+    var selectedDate by rememberSaveable(transaction.id) { mutableStateOf(transaction.occurredAt.toLocalDate()) }
+    var selectedTime by rememberSaveable(transaction.id) { mutableStateOf(transaction.occurredAt.toLocalTime()) }
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    var showTimePicker by rememberSaveable { mutableStateOf(false) }
+    var errorText by rememberSaveable { mutableStateOf<String?>(null) }
+    var isSaving by rememberSaveable { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val invalidAmountMessage = stringResource(R.string.amount_error)
+    val missingCategoryMessage = stringResource(R.string.category_error)
+    val updatedMessage = stringResource(R.string.transaction_updated)
+    val saveFailedMessage = stringResource(R.string.transaction_save_error)
+    val selectedCategoryType = when (transactionType) {
+        TransactionType.EXPENSE -> CategoryType.EXPENSE
+        TransactionType.INCOME -> CategoryType.INCOME
+    }
+    val timeText = remember(selectedTime) {
+        String.format(Locale.getDefault(), "%02d:%02d", selectedTime.hour, selectedTime.minute)
+    }
+    val amountTextStyle = TextStyle(
+        fontSize = 28.sp,
+        textAlign = TextAlign.Center,
+    )
+    val dateFieldInteractionSource = remember { MutableInteractionSource() }
+    val timeFieldInteractionSource = remember { MutableInteractionSource() }
+    val isDateFieldPressed by dateFieldInteractionSource.collectIsPressedAsState()
+    val isTimeFieldPressed by timeFieldInteractionSource.collectIsPressedAsState()
+
+    LaunchedEffect(isDateFieldPressed) {
+        if (isDateFieldPressed) {
+            showDatePicker = true
+        }
+    }
+    LaunchedEffect(isTimeFieldPressed) {
+        if (isTimeFieldPressed) {
+            showTimePicker = true
+        }
+    }
+
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                    start = 16.dp,
+                    top = 16.dp,
+                    end = 16.dp,
+                    bottom = 96.dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                item {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.amount),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        TextField(
+                            value = amountText,
+                            onValueChange = { amountText = it.toAmountInputText() },
+                            placeholder = {
+                                Text(
+                                    text = "0",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    style = amountTextStyle,
+                                    textAlign = TextAlign.Center,
+                                )
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            textStyle = amountTextStyle,
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent,
+                                errorContainerColor = Color.Transparent,
+                            ),
+                            modifier = Modifier
+                                .width(240.dp)
+                                .align(Alignment.CenterHorizontally)
+                                .testTag("add_transaction_amount"),
+                        )
+                    }
+                }
+                item {
+                    CategoryTypeSwitch(
+                        selectedType = selectedCategoryType,
+                        onTypeSelected = { selectedType ->
+                            transactionType = when (selectedType) {
+                                CategoryType.EXPENSE -> TransactionType.EXPENSE
+                                CategoryType.INCOME -> TransactionType.INCOME
+                                CategoryType.BOTH -> transactionType
+                            }
+                        },
+                    )
+                }
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Text(
+                            text = stringResource(R.string.category),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (availableCategories.isEmpty()) {
+                            EmptyState(text = stringResource(R.string.no_categories_yet))
+                        } else {
+                            LazyHorizontalGrid(
+                                rows = GridCells.Fixed(2),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(292.dp)
+                                    .testTag("add_transaction_category_grid"),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 2.dp),
+                            ) {
+                                gridItems(availableCategories, key = { it.id }) { category ->
+                                    CategoryGridTile(
+                                        category = category,
+                                        onClick = { selectedCategoryId = category.id },
+                                        selected = selectedCategoryId == category.id,
+                                        modifier = Modifier
+                                            .width(112.dp)
+                                            .testTag("add_transaction_category_${category.id}"),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(
+                            value = selectedDate.toString(),
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(stringResource(R.string.date)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.CalendarMonth,
+                                    contentDescription = null,
+                                )
+                            },
+                            singleLine = true,
+                            interactionSource = dateFieldInteractionSource,
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("add_transaction_date"),
+                        )
+                        OutlinedTextField(
+                            value = timeText,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(stringResource(R.string.time)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.AccessTime,
+                                    contentDescription = null,
+                                )
+                            },
+                            singleLine = true,
+                            interactionSource = timeFieldInteractionSource,
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("add_transaction_time"),
+                        )
+                    }
+                }
+                item {
+                    OutlinedTextField(
+                        value = titleText,
+                        onValueChange = { titleText = it },
+                        label = { Text(stringResource(R.string.title_optional)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                item {
+                    OutlinedTextField(
+                        value = noteText,
+                        onValueChange = { noteText = it },
+                        label = { Text(stringResource(R.string.note_optional)) },
+                        minLines = 3,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                errorText?.let { error ->
+                    item {
+                        Text(
+                            text = error,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            }
+
+            Button(
+                onClick = {
+                    if (isSaving) {
+                        return@Button
+                    }
+                    val amountMinor = try {
+                        MoneyFormatter.parseAmountMinor(amountText)
+                    } catch (_: IllegalArgumentException) {
+                        errorText = invalidAmountMessage
+                        return@Button
+                    }
+                    val categoryId = selectedCategoryId
+                    if (categoryId == null) {
+                        errorText = missingCategoryMessage
+                        return@Button
+                    }
+                    errorText = null
+                    isSaving = true
+                    scope.launch {
+                        try {
+                            onTransactionUpdated(
+                                transaction.copy(
+                                    categoryId = categoryId,
+                                    type = transactionType,
+                                    amountMinor = amountMinor,
+                                    title = titleText.trim().ifBlank { null },
+                                    note = noteText.trim().ifBlank { null },
+                                    occurredAt = LocalDateTime.of(selectedDate, selectedTime),
+                                    updatedAt = clock.instant(),
+                                ),
+                            )
+                            onDismiss()
+                            snackbarHostState.showSnackbar(updatedMessage)
+                        } catch (cancellation: CancellationException) {
+                            isSaving = false
+                            throw cancellation
+                        } catch (_: Exception) {
+                            isSaving = false
+                            snackbarHostState.showSnackbar(saveFailedMessage)
+                        }
+                    }
+                },
+                enabled = amountText.isNotBlank() && selectedCategoryId != null && !isSaving,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .testTag("add_transaction_save"),
+            ) {
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.Save,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(stringResource(R.string.update_transaction))
+            }
+        }
+    }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = selectedDate.toDatePickerMillis(),
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { selectedDate = it.toDatePickerDate() }
+                        showDatePicker = false
+                    },
+                ) {
+                    Text(stringResource(R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showTimePicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = selectedTime.hour,
+            initialMinute = selectedTime.minute,
+            is24Hour = true,
+        )
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        selectedTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
+                        showTimePicker = false
+                    },
+                ) {
+                    Text(stringResource(R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+            text = { TimePicker(state = timePickerState) },
+        )
+    }
+}
+
 private fun LocalDate.toDatePickerMillis(): Long =
     atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
 

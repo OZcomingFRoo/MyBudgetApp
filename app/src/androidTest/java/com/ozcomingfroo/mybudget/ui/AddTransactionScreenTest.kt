@@ -10,6 +10,7 @@ import androidx.compose.ui.test.performTouchInput
 import com.ozcomingfroo.mybudget.data.local.entity.CategoryEntity
 import com.ozcomingfroo.mybudget.data.local.entity.TransactionEntity
 import com.ozcomingfroo.mybudget.data.local.model.CategoryType
+import com.ozcomingfroo.mybudget.data.local.model.TransactionType
 import com.ozcomingfroo.mybudget.data.preferences.AppLanguageMode
 import com.ozcomingfroo.mybudget.data.preferences.AppPreferences
 import com.ozcomingfroo.mybudget.data.preferences.AppThemeMode
@@ -146,6 +147,48 @@ class AddTransactionScreenTest {
             .performTouchInput { click(center) }
 
         composeRule.waitUntil(timeoutMillis = 5_000) { savedAmountMinor.get() == 1_099L }
+    }
+
+    @Test
+    fun editTransactionSheetUpdatesExistingTransaction() {
+        val updatedId = AtomicLong(0)
+        val originalCreatedAt = Instant.parse("2026-06-01T08:00:00Z")
+        val transaction = TransactionEntity(
+            id = 44L,
+            budgetBookId = BudgetBookId,
+            categoryId = CategoryId,
+            type = TransactionType.EXPENSE,
+            amountMinor = 1_234L,
+            title = "Lunch",
+            note = "Cafe",
+            occurredAt = LocalDateTime.of(2026, 6, 15, 9, 45),
+            createdAt = originalCreatedAt,
+            updatedAt = originalCreatedAt,
+        )
+
+        composeRule.setContent {
+            MyBudgetTheme(themeMode = AppThemeMode.DEFAULT) {
+                EditTransactionSheet(
+                    transaction = transaction,
+                    categories = listOf(testCategory()),
+                    clock = TestClock,
+                    onDismiss = {},
+                    onTransactionUpdated = { updated ->
+                        updatedId.set(updated.id)
+                        assertEquals(transaction.budgetBookId, updated.budgetBookId)
+                        assertEquals(transaction.createdAt, updated.createdAt)
+                        assertEquals(TestInstant, updated.updatedAt)
+                        assertEquals(transaction.categoryId, updated.categoryId)
+                    },
+                    snackbarHostState = SnackbarHostState(),
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("add_transaction_save")
+            .performTouchInput { click(center) }
+
+        composeRule.waitUntil(timeoutMillis = 5_000) { updatedId.get() == transaction.id }
     }
 
     private fun testPreferences() = AppPreferences(
