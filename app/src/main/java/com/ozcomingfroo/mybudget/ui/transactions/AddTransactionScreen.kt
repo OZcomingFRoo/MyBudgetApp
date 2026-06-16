@@ -9,7 +9,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -120,9 +121,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -161,7 +164,6 @@ import java.time.LocalTime
 import java.time.YearMonth
 import java.time.ZoneOffset
 import java.time.format.DateTimeParseException
-import java.time.format.TextStyle
 import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.flowOf
@@ -223,6 +225,25 @@ internal fun AddTransactionScreen(
     val timeText = remember(selectedTime) {
         String.format(Locale.getDefault(), "%02d:%02d", selectedTime.hour, selectedTime.minute)
     }
+    val amountTextStyle = TextStyle(
+        fontSize = 28.sp,
+        textAlign = TextAlign.Center,
+    )
+    val dateFieldInteractionSource = remember { MutableInteractionSource() }
+    val timeFieldInteractionSource = remember { MutableInteractionSource() }
+    val isDateFieldPressed by dateFieldInteractionSource.collectIsPressedAsState()
+    val isTimeFieldPressed by timeFieldInteractionSource.collectIsPressedAsState()
+
+    LaunchedEffect(isDateFieldPressed) {
+        if (isDateFieldPressed) {
+            showDatePicker = true
+        }
+    }
+    LaunchedEffect(isTimeFieldPressed) {
+        if (isTimeFieldPressed) {
+            showTimePicker = true
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -240,7 +261,10 @@ internal fun AddTransactionScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     Text(
                         text = stringResource(R.string.amount),
                         style = MaterialTheme.typography.labelLarge,
@@ -248,10 +272,18 @@ internal fun AddTransactionScreen(
                     )
                     TextField(
                         value = amountText,
-                        onValueChange = { amountText = it.filter { char -> char.isDigit() || char == '.' } },
-                        placeholder = { Text("0") },
+                        onValueChange = { amountText = it.toAmountInputText() },
+                        placeholder = {
+                            Text(
+                                text = "0",
+                                modifier = Modifier.fillMaxWidth(),
+                                style = amountTextStyle,
+                                textAlign = TextAlign.Center,
+                            )
+                        },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
+                        textStyle = amountTextStyle,
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
@@ -260,6 +292,7 @@ internal fun AddTransactionScreen(
                         ),
                         modifier = Modifier
                             .width(240.dp)
+                            .align(Alignment.CenterHorizontally)
                             .testTag("add_transaction_amount"),
                     )
                 }
@@ -277,7 +310,7 @@ internal fun AddTransactionScreen(
                 )
             }
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Text(
                         text = stringResource(R.string.category),
                         style = MaterialTheme.typography.labelLarge,
@@ -287,13 +320,14 @@ internal fun AddTransactionScreen(
                         EmptyState(text = stringResource(R.string.no_categories_yet))
                     } else {
                         LazyHorizontalGrid(
-                            rows = GridCells.Fixed(3),
+                            rows = GridCells.Fixed(2),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(382.dp)
+                                .height(292.dp)
                                 .testTag("add_transaction_category_grid"),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 2.dp),
                         ) {
                             gridItems(availableCategories, key = { it.id }) { category ->
                                 CategoryGridTile(
@@ -323,9 +357,9 @@ internal fun AddTransactionScreen(
                             )
                         },
                         singleLine = true,
+                        interactionSource = dateFieldInteractionSource,
                         modifier = Modifier
                             .weight(1f)
-                            .clickable { showDatePicker = true }
                             .testTag("add_transaction_date"),
                     )
                     OutlinedTextField(
@@ -340,9 +374,9 @@ internal fun AddTransactionScreen(
                             )
                         },
                         singleLine = true,
+                        interactionSource = timeFieldInteractionSource,
                         modifier = Modifier
                             .weight(1f)
-                            .clickable { showTimePicker = true }
                             .testTag("add_transaction_time"),
                     )
                 }
@@ -508,3 +542,18 @@ private fun LocalDate.toDatePickerMillis(): Long =
 
 private fun Long.toDatePickerDate(): LocalDate =
     Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
+
+private fun String.toAmountInputText(): String {
+    val allowed = filter { it.isDigit() || it == '.' }
+    val decimalIndex = allowed.indexOf('.')
+    if (decimalIndex == -1) {
+        return allowed
+    }
+
+    val wholePart = allowed.take(decimalIndex)
+    val decimalPart = allowed
+        .drop(decimalIndex + 1)
+        .filter { it != '.' }
+        .take(2)
+    return "$wholePart.$decimalPart"
+}

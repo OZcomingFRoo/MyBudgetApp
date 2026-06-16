@@ -119,6 +119,35 @@ class AddTransactionScreenTest {
         composeRule.waitUntil(timeoutMillis = 5_000) { savedCategoryId.get() == SecondCategoryId }
     }
 
+    @Test
+    fun amountInputLimitsDecimalPlacesBeforeSaving() {
+        val savedAmountMinor = AtomicLong(0)
+
+        composeRule.setContent {
+            MyBudgetTheme(themeMode = AppThemeMode.DEFAULT) {
+                AddTransactionScreen(
+                    selectedBudgetBookId = BudgetBookId,
+                    categories = listOf(testCategory()),
+                    preferences = testPreferences(),
+                    insertTransaction = { transaction: TransactionEntity ->
+                        savedAmountMinor.set(transaction.amountMinor)
+                        1L
+                    },
+                    clock = TestClock,
+                    onTransactionSaved = {},
+                    snackbarHostState = SnackbarHostState(),
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("add_transaction_amount")
+            .performTextInput("10.999")
+        composeRule.onNodeWithTag("add_transaction_save")
+            .performTouchInput { click(center) }
+
+        composeRule.waitUntil(timeoutMillis = 5_000) { savedAmountMinor.get() == 1_099L }
+    }
+
     private fun testPreferences() = AppPreferences(
         selectedBudgetBookId = BudgetBookId,
         themeMode = AppThemeMode.DEFAULT,
