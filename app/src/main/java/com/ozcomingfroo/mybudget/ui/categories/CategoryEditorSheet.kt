@@ -133,7 +133,7 @@ internal fun CategoryEditorSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.9f),
+                .fillMaxHeight(),
         ) {
             Column(
                 modifier = Modifier
