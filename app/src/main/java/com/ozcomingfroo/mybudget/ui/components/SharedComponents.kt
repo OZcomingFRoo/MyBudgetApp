@@ -217,7 +217,7 @@ internal fun TransactionRow(
                     fontWeight = FontWeight.Medium,
                 )
                 Text(
-                    text = listOfNotNull(category?.title, transaction.occurredDate.toString()).joinToString(" ג€¢ "),
+                    text = listOfNotNull(category?.title, transaction.occurredAt.toLocalDate().toString()).joinToString(" ג€¢ "),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -324,3 +324,148 @@ internal fun EmptyState(
         }
     }
 }
+
+@Composable
+internal fun CategoryGridTile(
+    category: CategoryEntity,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    selected: Boolean = false,
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(0.82f),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
+        ),
+        border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            CategoryIconCircle(
+                iconName = category.iconName,
+                color = category.toColor(),
+                contentDescription = stringResource(R.string.category_icon_content_description, category.title),
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = category.title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+            )
+        }
+    }
+}
+
+@Composable
+internal fun CreateCategoryTile(
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(0.82f),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(58.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(32.dp),
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.create_category),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+            )
+        }
+    }
+}
+
+@Composable
+internal fun CategoryIconCircle(
+    iconName: String,
+    color: Color,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .size(58.dp)
+            .clip(CircleShape)
+            .background(color),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = iconName.toCategoryIcon(),
+            contentDescription = contentDescription,
+            tint = Color.White,
+            modifier = Modifier.size(34.dp),
+        )
+    }
+}
+
+private data class CategoryIconOption(
+    val iconName: String,
+    val imageVector: ImageVector,
+)
+
+private val CategoryIconOptions = listOf(
+    CategoryIconOption("shopping_cart", Icons.Filled.ShoppingCart),
+    CategoryIconOption("restaurant", Icons.Filled.Restaurant),
+    CategoryIconOption("home", Icons.Filled.Home),
+    CategoryIconOption("receipt", Icons.Filled.Receipt),
+    CategoryIconOption("phone_android", Icons.Filled.PhoneAndroid),
+    CategoryIconOption("directions_car", Icons.Filled.DirectionsCar),
+    CategoryIconOption("medical_services", Icons.Filled.LocalHospital),
+    CategoryIconOption("shopping_bag", Icons.Filled.ShoppingBag),
+    CategoryIconOption("movie", Icons.Filled.Movie),
+    CategoryIconOption("payments", Icons.Filled.Payments),
+    CategoryIconOption("work", Icons.Filled.Work),
+    CategoryIconOption("attach_money", Icons.Filled.AttachMoney),
+    CategoryIconOption("undo", Icons.AutoMirrored.Filled.Undo),
+    CategoryIconOption("card_giftcard", Icons.Filled.CardGiftcard),
+    CategoryIconOption("sports", Icons.Filled.SportsSoccer),
+    CategoryIconOption("education", Icons.Filled.School),
+    CategoryIconOption("tech", Icons.Filled.SportsEsports),
+    CategoryIconOption("category", Icons.Filled.Category),
+    CategoryIconOption("other", Icons.AutoMirrored.Filled.Help),
+)
+
+private fun String.toCategoryIcon(): ImageVector =
+    CategoryIconOptions.firstOrNull { it.iconName == this }?.imageVector ?: Icons.Filled.Category

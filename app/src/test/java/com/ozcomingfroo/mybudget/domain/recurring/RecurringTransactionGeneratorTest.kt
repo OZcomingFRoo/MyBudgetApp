@@ -11,6 +11,7 @@ import com.ozcomingfroo.mybudget.data.local.model.TransactionType
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -76,12 +77,12 @@ class RecurringTransactionGeneratorTest {
         assertEquals(4, generatedCount)
         assertEquals(
             listOf(
-                LocalDate.of(2026, 1, 31),
-                LocalDate.of(2026, 2, 28),
-                LocalDate.of(2026, 3, 31),
-                LocalDate.of(2026, 4, 30),
+                LocalDateTime.of(2026, 1, 31, 0, 0),
+                LocalDateTime.of(2026, 2, 28, 0, 0),
+                LocalDateTime.of(2026, 3, 31, 0, 0),
+                LocalDateTime.of(2026, 4, 30, 0, 0),
             ),
-            generatedTransactions.map { it.occurredDate },
+            generatedTransactions.map { it.occurredAt },
         )
         assertEquals(listOf(ruleId, ruleId, ruleId, ruleId), generatedTransactions.map { it.recurringTransactionId })
         assertEquals(LocalDate.of(2026, 4, 30), updatedRule?.lastRunDate)

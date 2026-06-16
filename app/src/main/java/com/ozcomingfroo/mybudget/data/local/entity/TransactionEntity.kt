@@ -7,7 +7,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.ozcomingfroo.mybudget.data.local.model.TransactionType
 import java.time.Instant
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Entity(
     tableName = "transactions",
@@ -56,7 +56,7 @@ data class TransactionEntity(
     val title: String? = null,
     val note: String? = null,
     @ColumnInfo(name = "occurred_date")
-    val occurredDate: LocalDate,
+    val occurredAt: LocalDateTime,
     @ColumnInfo(name = "created_at")
     val createdAt: Instant,
     @ColumnInfo(name = "updated_at")

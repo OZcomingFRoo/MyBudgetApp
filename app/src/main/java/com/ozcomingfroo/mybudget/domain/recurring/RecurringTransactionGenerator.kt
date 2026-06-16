@@ -48,7 +48,7 @@ class RecurringTransactionGenerator @Inject constructor(
                 amountMinor = rule.amountMinor,
                 title = rule.title,
                 note = rule.note,
-                occurredDate = dueDate,
+                occurredAt = dueDate.atStartOfDay(),
                 createdAt = now,
                 updatedAt = now,
             )

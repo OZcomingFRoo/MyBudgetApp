@@ -3,6 +3,8 @@
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.ozcomingfroo.mybudget.data.local.dao.BudgetBookDao
 import com.ozcomingfroo.mybudget.data.local.dao.CategoryDao
 import com.ozcomingfroo.mybudget.data.local.dao.RecurringTransactionDao
@@ -19,7 +21,7 @@ import com.ozcomingfroo.mybudget.data.local.entity.TransactionEntity
         TransactionEntity::class,
         RecurringTransactionEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 @TypeConverters(MyBudgetTypeConverters::class)
@@ -28,4 +30,19 @@ abstract class MyBudgetDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun transactionDao(): TransactionDao
     abstract fun recurringTransactionDao(): RecurringTransactionDao
+
+    companion object {
+        val Migration1To2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    UPDATE transactions
+                    SET occurred_date = occurred_date || 'T00:00'
+                    WHERE occurred_date IS NOT NULL
+                    AND instr(occurred_date, 'T') = 0
+                    """.trimIndent(),
+                )
+            }
+        }
+    }
 }

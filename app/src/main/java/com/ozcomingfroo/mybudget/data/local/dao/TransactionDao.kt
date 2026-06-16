@@ -9,7 +9,7 @@ import com.ozcomingfroo.mybudget.data.local.entity.TransactionEntity
 import com.ozcomingfroo.mybudget.data.local.model.TransactionType
 import com.ozcomingfroo.mybudget.data.local.query.CategoryAmountSummary
 import com.ozcomingfroo.mybudget.data.local.query.MonthlyAmountSummary
-import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -27,14 +27,15 @@ interface TransactionDao {
         """
         SELECT * FROM transactions
         WHERE budget_book_id = :budgetBookId
-        AND occurred_date BETWEEN :startDate AND :endDate
+        AND occurred_date >= :startDateTime
+        AND occurred_date < :endExclusiveDateTime
         ORDER BY occurred_date DESC, id DESC
         """,
     )
     fun observeForDateRange(
         budgetBookId: Long,
-        startDate: LocalDate,
-        endDate: LocalDate,
+        startDateTime: LocalDateTime,
+        endExclusiveDateTime: LocalDateTime,
     ): Flow<List<TransactionEntity>>
 
     @Query("SELECT * FROM transactions WHERE id = :id")
@@ -66,14 +67,15 @@ interface TransactionDao {
         SELECT COALESCE(SUM(amount_minor), 0) FROM transactions
         WHERE budget_book_id = :budgetBookId
         AND type = :type
-        AND occurred_date BETWEEN :startDate AND :endDate
+        AND occurred_date >= :startDateTime
+        AND occurred_date < :endExclusiveDateTime
         """,
     )
     suspend fun totalByType(
         budgetBookId: Long,
         type: TransactionType,
-        startDate: LocalDate,
-        endDate: LocalDate,
+        startDateTime: LocalDateTime,
+        endExclusiveDateTime: LocalDateTime,
     ): Long
 
     @Query(
@@ -97,7 +99,8 @@ interface TransactionDao {
         FROM transactions
         WHERE budget_book_id = :budgetBookId
         AND type = :type
-        AND occurred_date BETWEEN :startDate AND :endDate
+        AND occurred_date >= :startDateTime
+        AND occurred_date < :endExclusiveDateTime
         GROUP BY category_id
         ORDER BY total_minor DESC
         """,
@@ -105,8 +108,8 @@ interface TransactionDao {
     suspend fun totalsByCategory(
         budgetBookId: Long,
         type: TransactionType,
-        startDate: LocalDate,
-        endDate: LocalDate,
+        startDateTime: LocalDateTime,
+        endExclusiveDateTime: LocalDateTime,
     ): List<CategoryAmountSummary>
 
     @Query(
@@ -115,7 +118,8 @@ interface TransactionDao {
         FROM transactions
         WHERE budget_book_id = :budgetBookId
         AND type = :type
-        AND occurred_date BETWEEN :startDate AND :endDate
+        AND occurred_date >= :startDateTime
+        AND occurred_date < :endExclusiveDateTime
         GROUP BY month
         ORDER BY month
         """,
@@ -123,7 +127,7 @@ interface TransactionDao {
     suspend fun monthlyTotals(
         budgetBookId: Long,
         type: TransactionType,
-        startDate: LocalDate,
-        endDate: LocalDate,
+        startDateTime: LocalDateTime,
+        endExclusiveDateTime: LocalDateTime,
     ): List<MonthlyAmountSummary>
 }
