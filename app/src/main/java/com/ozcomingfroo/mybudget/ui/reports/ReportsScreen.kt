@@ -157,7 +157,7 @@ internal fun ReportsScreen(
     clock: Clock,
 ) {
     val month = YearMonth.now(clock)
-    val monthlyTransactions = transactions.filter { YearMonth.from(it.occurredDate) == month }
+    val monthlyTransactions = transactions.filter { YearMonth.from(it.occurredAt.toLocalDate()) == month }
     val income = monthlyTransactions.total(TransactionType.INCOME)
     val expenses = monthlyTransactions.total(TransactionType.EXPENSE)
     val categoryById = categories.associateBy { it.id }

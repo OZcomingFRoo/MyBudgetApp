@@ -6,6 +6,7 @@ import com.ozcomingfroo.mybudget.data.local.model.RecurringFrequency
 import com.ozcomingfroo.mybudget.data.local.model.TransactionType
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 class MyBudgetTypeConverters {
     @TypeConverter
@@ -13,6 +14,14 @@ class MyBudgetTypeConverters {
 
     @TypeConverter
     fun stringToLocalDate(value: String?): LocalDate? = value?.let(LocalDate::parse)
+
+    @TypeConverter
+    fun localDateTimeToString(value: LocalDateTime?): String? = value?.toString()
+
+    @TypeConverter
+    fun stringToLocalDateTime(value: String?): LocalDateTime? = value?.let {
+        if ('T' in it) LocalDateTime.parse(it) else LocalDate.parse(it).atStartOfDay()
+    }
 
     @TypeConverter
     fun instantToEpochMillis(value: Instant?): Long? = value?.toEpochMilli()

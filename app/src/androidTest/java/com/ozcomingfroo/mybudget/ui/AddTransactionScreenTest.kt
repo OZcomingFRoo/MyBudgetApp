@@ -17,9 +17,10 @@ import com.ozcomingfroo.mybudget.data.preferences.DefaultTransactionType
 import com.ozcomingfroo.mybudget.ui.theme.MyBudgetTheme
 import java.time.Clock
 import java.time.Instant
-import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -45,6 +46,8 @@ class AddTransactionScreenTest {
                     insertTransaction = { transaction: TransactionEntity ->
                         insertCount.incrementAndGet()
                         assertEquals(1_000L, transaction.amountMinor)
+                        assertEquals(CategoryId, transaction.categoryId)
+                        assertEquals(LocalDateTime.of(2026, 6, 16, 10, 30), transaction.occurredAt)
                         insertStarted.complete(Unit)
                         finishInsert.await()
                         1L
@@ -82,6 +85,69 @@ class AddTransactionScreenTest {
         }
     }
 
+    @Test
+    fun categoryCardSelectionChangesSavedCategory() {
+        val savedCategoryId = AtomicLong(0)
+
+        composeRule.setContent {
+            MyBudgetTheme(themeMode = AppThemeMode.DEFAULT) {
+                AddTransactionScreen(
+                    selectedBudgetBookId = BudgetBookId,
+                    categories = listOf(
+                        testCategory(id = CategoryId, title = "Food"),
+                        testCategory(id = SecondCategoryId, title = "Transport"),
+                    ),
+                    preferences = testPreferences(),
+                    insertTransaction = { transaction: TransactionEntity ->
+                        savedCategoryId.set(transaction.categoryId ?: 0)
+                        1L
+                    },
+                    clock = TestClock,
+                    onTransactionSaved = {},
+                    snackbarHostState = SnackbarHostState(),
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("add_transaction_amount")
+            .performTextInput("5")
+        composeRule.onNodeWithTag("add_transaction_category_$SecondCategoryId")
+            .performTouchInput { click(center) }
+        composeRule.onNodeWithTag("add_transaction_save")
+            .performTouchInput { click(center) }
+
+        composeRule.waitUntil(timeoutMillis = 5_000) { savedCategoryId.get() == SecondCategoryId }
+    }
+
+    @Test
+    fun amountInputLimitsDecimalPlacesBeforeSaving() {
+        val savedAmountMinor = AtomicLong(0)
+
+        composeRule.setContent {
+            MyBudgetTheme(themeMode = AppThemeMode.DEFAULT) {
+                AddTransactionScreen(
+                    selectedBudgetBookId = BudgetBookId,
+                    categories = listOf(testCategory()),
+                    preferences = testPreferences(),
+                    insertTransaction = { transaction: TransactionEntity ->
+                        savedAmountMinor.set(transaction.amountMinor)
+                        1L
+                    },
+                    clock = TestClock,
+                    onTransactionSaved = {},
+                    snackbarHostState = SnackbarHostState(),
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("add_transaction_amount")
+            .performTextInput("10.999")
+        composeRule.onNodeWithTag("add_transaction_save")
+            .performTouchInput { click(center) }
+
+        composeRule.waitUntil(timeoutMillis = 5_000) { savedAmountMinor.get() == 1_099L }
+    }
+
     private fun testPreferences() = AppPreferences(
         selectedBudgetBookId = BudgetBookId,
         themeMode = AppThemeMode.DEFAULT,
@@ -90,10 +156,13 @@ class AddTransactionScreenTest {
         defaultTransactionType = DefaultTransactionType.EXPENSE,
     )
 
-    private fun testCategory() = CategoryEntity(
-        id = CategoryId,
+    private fun testCategory(
+        id: Long = CategoryId,
+        title: String = "Food",
+    ) = CategoryEntity(
+        id = id,
         budgetBookId = BudgetBookId,
-        title = "Food",
+        title = title,
         type = CategoryType.EXPENSE,
         iconName = "restaurant",
         color = "#2E7D32",
@@ -105,7 +174,8 @@ class AddTransactionScreenTest {
     private companion object {
         const val BudgetBookId = 1L
         const val CategoryId = 2L
-        val TestInstant: Instant = Instant.parse("2026-06-16T00:00:00Z")
+        const val SecondCategoryId = 3L
+        val TestInstant: Instant = Instant.parse("2026-06-16T10:30:00Z")
         val TestClock: Clock = Clock.fixed(TestInstant, ZoneOffset.UTC)
     }
 }

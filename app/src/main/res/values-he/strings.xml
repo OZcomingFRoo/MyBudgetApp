@@ -26,6 +26,7 @@
     <string name="amount">סכום</string>
     <string name="category">קטגוריה</string>
     <string name="date">תאריך</string>
+    <string name="time">שעה</string>
     <string name="date_format_hint">יש להשתמש בפורמט YYYY-MM-DD.</string>
     <string name="title_optional">כותרת, לא חובה</string>
     <string name="note_optional">הערה, לא חובה</string>

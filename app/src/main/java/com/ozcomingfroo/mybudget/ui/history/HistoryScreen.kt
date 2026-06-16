@@ -159,7 +159,7 @@ internal fun HistoryScreen(
     snackbarHostState: SnackbarHostState,
 ) {
     val categoryById = categories.associateBy { it.id }
-    val groupedTransactions = transactions.groupBy { YearMonth.from(it.occurredDate) }
+    val groupedTransactions = transactions.groupBy { YearMonth.from(it.occurredAt.toLocalDate()) }
     val scope = rememberCoroutineScope()
     val deletedMessage = stringResource(R.string.transaction_deleted)
     val undoLabel = stringResource(R.string.undo)

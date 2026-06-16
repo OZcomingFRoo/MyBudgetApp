@@ -31,7 +31,12 @@ class TransactionRepository @Inject constructor(
         type: TransactionType,
         startDate: LocalDate,
         endDate: LocalDate,
-    ): Long = transactionDao.totalByType(budgetBookId, type, startDate, endDate)
+    ): Long = transactionDao.totalByType(
+        budgetBookId = budgetBookId,
+        type = type,
+        startDateTime = startDate.atStartOfDay(),
+        endExclusiveDateTime = endDate.plusDays(1).atStartOfDay(),
+    )
 
     suspend fun currentBalance(budgetBookId: Long): Long =
         transactionDao.currentBalance(budgetBookId)
@@ -42,7 +47,12 @@ class TransactionRepository @Inject constructor(
         startDate: LocalDate,
         endDate: LocalDate,
     ): List<CategoryAmountSummary> =
-        transactionDao.totalsByCategory(budgetBookId, type, startDate, endDate)
+        transactionDao.totalsByCategory(
+            budgetBookId = budgetBookId,
+            type = type,
+            startDateTime = startDate.atStartOfDay(),
+            endExclusiveDateTime = endDate.plusDays(1).atStartOfDay(),
+        )
 
     suspend fun monthlyTotals(
         budgetBookId: Long,
@@ -50,5 +60,10 @@ class TransactionRepository @Inject constructor(
         startDate: LocalDate,
         endDate: LocalDate,
     ): List<MonthlyAmountSummary> =
-        transactionDao.monthlyTotals(budgetBookId, type, startDate, endDate)
+        transactionDao.monthlyTotals(
+            budgetBookId = budgetBookId,
+            type = type,
+            startDateTime = startDate.atStartOfDay(),
+            endExclusiveDateTime = endDate.plusDays(1).atStartOfDay(),
+        )
 }

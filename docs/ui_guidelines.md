@@ -55,7 +55,7 @@ Optional fields:
 - recurring settings
 - reminder
 
-Date should default to today. Category selection should be quick and visual where practical. Recurring and reminder options should be secondary or collapsed so normal one-time transactions stay fast to enter.
+Date should default to today and time should default to the current time. Category selection should be quick and visual where practical. Recurring and reminder options should be secondary or collapsed so normal one-time transactions stay fast to enter.
 
 Edit transaction should reuse the add transaction screen. Normal transaction deletion should delete immediately with an undo snackbar. Confirmation dialogs may be used later for bulk or high-risk destructive actions.
 
@@ -102,7 +102,7 @@ Forms should be forgiving, clear, and fast.
 
 Required fields should be obvious. Validation errors should appear near the relevant field. Amount input should accept numbers only. Amount values should not be negative; transaction type determines income or expense.
 
-Date fields should default to today and use a date picker.
+Date fields should default to today and use a date picker. Time fields should use a time picker when transactions store date-time values.
 
 Use both validation strategies:
 
