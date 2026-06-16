@@ -60,6 +60,10 @@ Agents may run local commands, including file searches, Gradle builds, tests, fo
 
 Agents may run all Git commands except pushing to origin. Do not push changes to any remote repository.
 
+Agents may rebase, merge, and reset local branches without asking first, while still preserving unrelated user changes and respecting any higher-level tool approval requirements.
+
+Agents may update GitHub issues without asking first, including posting comments, linking or attaching pull requests, and closing issues when the requested work is complete.
+
 Agents must ask before installing dependencies, updating dependencies, or downloading new tooling.
 
 No files are globally protected, but agents must preserve unrelated user changes and avoid broad refactors unless the user explicitly asks for them.
@@ -147,6 +151,8 @@ If a command cannot run because of missing Android SDK, missing emulator/device,
 Files under `md_chat/` are brainstorming notes only. They are not authoritative project documentation unless their contents are explicitly promoted into `AGENTS.md`, `README.md`, or another formal doc.
 
 Update `AGENTS.md` when architecture, commands, permissions, or major product decisions change.
+
+Write comments, pull request descriptions, and commit messages in Markdown format.
 
 Do not create many documentation files unless documentation is explicitly requested or clearly needed.
 
