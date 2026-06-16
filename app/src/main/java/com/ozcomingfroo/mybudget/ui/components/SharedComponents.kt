@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.Movie
@@ -199,6 +200,7 @@ internal fun SummaryMetricCard(
 internal fun TransactionRow(
     transaction: TransactionEntity,
     category: CategoryEntity?,
+    onEdit: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
@@ -209,7 +211,15 @@ internal fun TransactionRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            CategoryDot(color = category?.toColor() ?: MaterialTheme.colorScheme.primary)
+            CategoryIconCircle(
+                iconName = category?.iconName ?: "category",
+                color = category?.toColor() ?: MaterialTheme.colorScheme.primary,
+                contentDescription = category?.let {
+                    stringResource(R.string.category_icon_content_description, it.title)
+                },
+                size = 42.dp,
+                iconSize = 24.dp,
+            )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = transaction.title ?: category?.title ?: stringResource(R.string.uncategorized),
@@ -217,12 +227,15 @@ internal fun TransactionRow(
                     fontWeight = FontWeight.Medium,
                 )
                 Text(
-                    text = listOfNotNull(category?.title, transaction.occurredAt.toLocalDate().toString()).joinToString(" ג€¢ "),
+                    text = listOfNotNull(
+                        transaction.occurredAt.toLocalDate().toString(),
+                        transaction.occurredAt.toLocalTime().format(TransactionTimeFormatter),
+                    ).joinToString(stringResource(R.string.transaction_subtitle_separator)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Column(horizontalAlignment = Alignment.End) {
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = transaction.signedAmountText(),
                     style = MaterialTheme.typography.bodyLarge,
@@ -231,6 +244,14 @@ internal fun TransactionRow(
                     textAlign = TextAlign.End,
                 )
                 trailing?.invoke()
+            }
+            onEdit?.let {
+                IconButton(onClick = it) {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = stringResource(R.string.edit_transaction),
+                    )
+                }
             }
         }
     }
@@ -423,10 +444,12 @@ internal fun CategoryIconCircle(
     color: Color,
     contentDescription: String?,
     modifier: Modifier = Modifier,
+    size: androidx.compose.ui.unit.Dp = 58.dp,
+    iconSize: androidx.compose.ui.unit.Dp = 34.dp,
 ) {
     Box(
         modifier = modifier
-            .size(58.dp)
+            .size(size)
             .clip(CircleShape)
             .background(color),
         contentAlignment = Alignment.Center,
@@ -435,7 +458,7 @@ internal fun CategoryIconCircle(
             imageVector = iconName.toCategoryIcon(),
             contentDescription = contentDescription,
             tint = Color.White,
-            modifier = Modifier.size(34.dp),
+            modifier = Modifier.size(iconSize),
         )
     }
 }
@@ -444,6 +467,8 @@ private data class CategoryIconOption(
     val iconName: String,
     val imageVector: ImageVector,
 )
+
+private val TransactionTimeFormatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
 
 private val CategoryIconOptions = listOf(
     CategoryIconOption("shopping_cart", Icons.Filled.ShoppingCart),

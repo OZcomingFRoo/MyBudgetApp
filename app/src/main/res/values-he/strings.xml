@@ -93,4 +93,17 @@
     <string name="budget_book_name_saved">שם ספר התקציב נשמר.</string>
     <string name="save">שמירה</string>
     <string name="settings_budget_book">ספר תקציב</string>
+    <string name="remaining_for_range">&#x05E0;&#x05D5;&#x05EA;&#x05E8;</string>
+    <string name="report_preview_body_for_range">&#x05D1;&#x05D8;&#x05D5;&#x05D5;&#x05D7; &#x05E9;&#x05E0;&#x05D1;&#x05D7;&#x05E8;: %1$s &#x05D4;&#x05D5;&#x05E6;&#x05D0;&#x05D5;&#x05EA; &#x05D5;-%2$s &#x05D4;&#x05DB;&#x05E0;&#x05E1;&#x05D5;&#x05EA;.</string>
+    <string name="range_day">&#x05D9;&#x05D5;&#x05DD;</string>
+    <string name="range_week">&#x05E9;&#x05D1;&#x05D5;&#x05E2;</string>
+    <string name="range_month">&#x05D7;&#x05D5;&#x05D3;&#x05E9;</string>
+    <string name="range_year">&#x05E9;&#x05E0;&#x05D4;</string>
+    <string name="previous_range">&#x05D4;&#x05D8;&#x05D5;&#x05D5;&#x05D7; &#x05D4;&#x05E7;&#x05D5;&#x05D3;&#x05DD;</string>
+    <string name="next_range">&#x05D4;&#x05D8;&#x05D5;&#x05D5;&#x05D7; &#x05D4;&#x05D1;&#x05D0;</string>
+    <string name="no_chart_data">&#x05D0;&#x05D9;&#x05DF; &#x05E0;&#x05EA;&#x05D5;&#x05E0;&#x05D9;&#x05DD;</string>
+    <string name="update_transaction">&#x05E2;&#x05D3;&#x05DB;&#x05D5;&#x05DF; &#x05E4;&#x05E2;&#x05D5;&#x05DC;&#x05D4;</string>
+    <string name="edit_transaction">&#x05E2;&#x05E8;&#x05D9;&#x05DB;&#x05EA; &#x05E4;&#x05E2;&#x05D5;&#x05DC;&#x05D4;</string>
+    <string name="transaction_updated">&#x05D4;&#x05E4;&#x05E2;&#x05D5;&#x05DC;&#x05D4; &#x05E2;&#x05D5;&#x05D3;&#x05DB;&#x05E0;&#x05D4;.</string>
+    <string name="transaction_subtitle_separator"> • </string>
 </resources>
