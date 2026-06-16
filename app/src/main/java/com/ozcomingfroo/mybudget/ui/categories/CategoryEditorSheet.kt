@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -63,7 +63,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -107,7 +106,6 @@ internal fun CategoryEditorSheet(
         mutableStateOf(category?.color ?: CategoryColorOptions.first())
     }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
-    val maxSheetHeight = (LocalConfiguration.current.screenHeightDp * 0.9f).dp
     val canSave = title.trim().isNotBlank()
     val strings = CategoryEditorStrings(
         sheetTitle = stringResource(
@@ -135,12 +133,12 @@ internal fun CategoryEditorSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = maxSheetHeight),
+                .fillMaxHeight(0.9f),
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f, fill = false)
+                    .weight(1f)
                     .verticalScroll(rememberScrollState())
                     .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
