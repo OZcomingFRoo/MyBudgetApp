@@ -32,8 +32,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,8 +79,9 @@ internal fun DashboardScreen(
     onOpenReports: () -> Unit,
 ) {
     val locale = LocalContext.current.resources.configuration.locales[0]
-    var rangeType by remember { mutableStateOf(DashboardRangeType.Month) }
-    var anchorDate by remember { mutableStateOf(LocalDate.now(clock)) }
+    var rangeType by rememberSaveable { mutableStateOf(DashboardRangeType.Month) }
+    var anchorEpochDay by rememberSaveable { mutableLongStateOf(LocalDate.now(clock).toEpochDay()) }
+    val anchorDate = LocalDate.ofEpochDay(anchorEpochDay)
     var editingTransaction by remember { mutableStateOf<TransactionEntity?>(null) }
     val dateRange = remember(rangeType, anchorDate, locale) {
         DashboardDateRange.from(rangeType, anchorDate, locale)
@@ -118,10 +121,10 @@ internal fun DashboardScreen(
                 locale = locale,
                 onTypeSelected = {
                     rangeType = it
-                    anchorDate = LocalDate.now(clock)
+                    anchorEpochDay = LocalDate.now(clock).toEpochDay()
                 },
-                onPrevious = { anchorDate = rangeType.move(anchorDate, -1) },
-                onNext = { anchorDate = rangeType.move(anchorDate, 1) },
+                onPrevious = { anchorEpochDay = rangeType.move(anchorDate, -1).toEpochDay() },
+                onNext = { anchorEpochDay = rangeType.move(anchorDate, 1).toEpochDay() },
             )
         }
         item {

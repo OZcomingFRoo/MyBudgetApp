@@ -228,8 +228,8 @@ internal fun TransactionRow(
                 )
                 Text(
                     text = listOfNotNull(
-                        category?.title,
                         transaction.occurredAt.toLocalDate().toString(),
+                        transaction.occurredAt.toLocalTime().format(TransactionTimeFormatter),
                     ).joinToString(stringResource(R.string.transaction_subtitle_separator)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -467,6 +467,8 @@ private data class CategoryIconOption(
     val iconName: String,
     val imageVector: ImageVector,
 )
+
+private val TransactionTimeFormatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
 
 private val CategoryIconOptions = listOf(
     CategoryIconOption("shopping_cart", Icons.Filled.ShoppingCart),
