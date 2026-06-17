@@ -285,6 +285,8 @@ private fun MyBudgetAppShell(
                         categories = categories,
                         transactions = transactions,
                         transactionRepository = transactionRepository,
+                        clock = clock,
+                        updateTransaction = transactionRepository::update,
                         onAddTransaction = { navController.navigate(AppDestination.AddTransaction.route) },
                         snackbarHostState = snackbarHostState,
                     )
