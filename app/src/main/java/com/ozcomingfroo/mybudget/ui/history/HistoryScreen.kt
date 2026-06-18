@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -23,6 +25,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
@@ -85,6 +88,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -115,6 +119,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -191,7 +196,6 @@ internal fun HistoryScreen(
     val filteredTransactions = remember(transactions, activeFilter) {
         transactions.filterByHistoryFilter(activeFilter)
     }
-    val groupedTransactions = filteredTransactions.groupBy { YearMonth.from(it.occurredAt.toLocalDate()) }
     val scope = rememberCoroutineScope()
     val deletedMessage = stringResource(R.string.transaction_deleted)
     val undoLabel = stringResource(R.string.undo)
@@ -232,6 +236,12 @@ internal fun HistoryScreen(
                 }
             }
         }
+        item {
+            HistoryFilterSummary(
+                filter = activeFilter,
+                categoryById = categoryById,
+            )
+        }
         if (transactions.isEmpty()) {
             item {
                 EmptyState(
@@ -254,51 +264,41 @@ internal fun HistoryScreen(
                 )
             }
         } else {
-            groupedTransactions.forEach { (month, monthTransactions) ->
-                item {
-                    Text(
-                        text = month.toString(),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-                items(monthTransactions, key = { it.id }) { transaction ->
-                    TransactionRow(
-                        transaction = transaction,
-                        category = transaction.categoryId?.let(categoryById::get),
-                        trailing = {
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                FilledTonalIconButton(onClick = { editingTransaction = transaction }) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Edit,
-                                        contentDescription = stringResource(R.string.edit_transaction),
-                                    )
-                                }
-                                FilledTonalIconButton(
-                                    onClick = {
-                                        scope.launch {
-                                            transactionRepository.delete(transaction)
-                                            val result = snackbarHostState.showSnackbar(
-                                                message = deletedMessage,
-                                                actionLabel = undoLabel,
-                                                duration = SnackbarDuration.Short,
-                                            )
-                                            if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
-                                                transactionRepository.insert(transaction.copy(id = 0))
-                                            }
-                                        }
-                                    },
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Delete,
-                                        contentDescription = stringResource(R.string.delete_transaction),
-                                    )
-                                }
+            items(filteredTransactions, key = { it.id }) { transaction ->
+                TransactionRow(
+                    transaction = transaction,
+                    category = transaction.categoryId?.let(categoryById::get),
+                    trailing = {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            FilledTonalIconButton(onClick = { editingTransaction = transaction }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Edit,
+                                    contentDescription = stringResource(R.string.edit_transaction),
+                                )
                             }
-                        },
-                    )
-                }
+                            FilledTonalIconButton(
+                                onClick = {
+                                    scope.launch {
+                                        transactionRepository.delete(transaction)
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = deletedMessage,
+                                            actionLabel = undoLabel,
+                                            duration = SnackbarDuration.Short,
+                                        )
+                                        if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                                            transactionRepository.insert(transaction.copy(id = 0))
+                                        }
+                                    }
+                                },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Delete,
+                                    contentDescription = stringResource(R.string.delete_transaction),
+                                )
+                            }
+                        }
+                    },
+                )
             }
         }
     }
@@ -335,6 +335,88 @@ internal fun HistoryScreen(
             onTransactionUpdated = updateTransaction,
             snackbarHostState = snackbarHostState,
         )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun HistoryFilterSummary(
+    filter: HistoryFilter,
+    categoryById: Map<Long, CategoryEntity>,
+) {
+    val selectedCategories = filter.selectedCategoryIds
+        .map { categoryId -> categoryId to categoryById[categoryId] }
+        .sortedWith(
+            compareBy<Pair<Long, CategoryEntity?>> { it.second?.sortOrder ?: Int.MAX_VALUE }
+                .thenBy { it.second?.title ?: "" },
+        )
+
+    FlowRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp, bottom = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        HistorySummaryChip(label = "${filter.startDate} - ${filter.endDate}")
+        HistorySummaryChip(label = filter.type.label())
+        if (selectedCategories.isEmpty()) {
+            HistorySummaryChip(
+                label = stringResource(R.string.all_categories),
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Category,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                },
+            )
+        } else {
+            selectedCategories.forEach { (_, category) ->
+                HistorySummaryChip(
+                    label = category?.title ?: stringResource(R.string.uncategorized),
+                    leadingIcon = {
+                        CategoryIconCircle(
+                            iconName = category?.iconName ?: "category",
+                            color = category?.toColor() ?: MaterialTheme.colorScheme.primary,
+                            contentDescription = null,
+                            size = 20.dp,
+                            iconSize = 13.dp,
+                        )
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HistorySummaryChip(
+    label: String,
+    leadingIcon: (@Composable () -> Unit)? = null,
+) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    ) {
+        Row(
+            modifier = Modifier
+                .heightIn(min = 32.dp)
+                .widthIn(max = 220.dp)
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            leadingIcon?.invoke()
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 
