@@ -304,6 +304,7 @@ private fun MyBudgetAppShell(
                         categories = categories,
                         transactions = transactions,
                         clock = clock,
+                        onAddTransaction = { navController.navigate(AppDestination.AddTransaction.route) },
                     )
                 }
                 composable(AppDestination.Settings.route) {

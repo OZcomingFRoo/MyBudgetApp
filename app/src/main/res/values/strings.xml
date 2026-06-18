@@ -69,7 +69,15 @@
     <string name="no_transactions_match_filters">No transactions match these filters.</string>
     <string name="current_month">Current month</string>
     <string name="spending_by_category">Spending by category</string>
-    <string name="no_report_data">No report data for this month yet.</string>
+    <string name="no_report_data">No report data for this range yet. Add transactions to see spending patterns here.</string>
+    <string name="income_vs_expenses">Income vs expenses</string>
+    <string name="spending_breakdown">Spending breakdown</string>
+    <string name="top_categories">Top categories</string>
+    <string name="total_spent">Total spent</string>
+    <string name="other_category">Other</string>
+    <string name="range_custom">Custom</string>
+    <string name="reports_custom_range_error">Enter a valid custom date range.</string>
+    <string name="percent_value">%1$d%%</string>
     <string name="uncategorized">Uncategorized</string>
     <string name="both">Both</string>
     <string name="theme">Theme</string>
