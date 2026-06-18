@@ -42,4 +42,7 @@ interface RecurringTransactionDao {
 
     @Delete
     suspend fun delete(recurringTransaction: RecurringTransactionEntity)
+
+    @Query("DELETE FROM recurring_transactions WHERE category_id = :categoryId")
+    suspend fun deleteByCategoryId(categoryId: Long)
 }

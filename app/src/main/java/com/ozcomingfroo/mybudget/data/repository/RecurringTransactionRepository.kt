@@ -25,6 +25,10 @@ class RecurringTransactionRepository @Inject constructor(
         recurringTransactionDao.update(rule.copy(updatedAt = clock.instant()))
     }
 
+    suspend fun delete(rule: RecurringTransactionEntity) {
+        recurringTransactionDao.delete(rule)
+    }
+
     private fun validate(rule: RecurringTransactionEntity) {
         require(rule.interval >= 1) { "Recurring transaction interval must be at least 1." }
         require(rule.amountMinor >= 0) { "Recurring transaction amount cannot be negative." }

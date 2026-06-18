@@ -1,6 +1,9 @@
 ﻿package com.ozcomingfroo.mybudget.data.repository
 
+import androidx.room.withTransaction
+import com.ozcomingfroo.mybudget.data.local.MyBudgetDatabase
 import com.ozcomingfroo.mybudget.data.local.dao.CategoryDao
+import com.ozcomingfroo.mybudget.data.local.dao.RecurringTransactionDao
 import com.ozcomingfroo.mybudget.data.local.entity.CategoryEntity
 import com.ozcomingfroo.mybudget.data.local.model.CategoryType
 import java.time.Clock
@@ -10,7 +13,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Singleton
 class CategoryRepository @Inject constructor(
+    private val database: MyBudgetDatabase,
     private val categoryDao: CategoryDao,
+    private val recurringTransactionDao: RecurringTransactionDao,
     private val clock: Clock,
 ) {
     fun observeActiveForBudgetBook(budgetBookId: Long): Flow<List<CategoryEntity>> =
@@ -52,6 +57,9 @@ class CategoryRepository @Inject constructor(
 
     suspend fun archive(id: Long) {
         val now = clock.instant()
-        categoryDao.archive(id = id, archivedAt = now, updatedAt = now)
+        database.withTransaction {
+            recurringTransactionDao.deleteByCategoryId(id)
+            categoryDao.archive(id = id, archivedAt = now, updatedAt = now)
+        }
     }
 }

@@ -42,6 +42,7 @@ import androidx.navigation.compose.rememberNavController
 import com.ozcomingfroo.mybudget.R
 import com.ozcomingfroo.mybudget.data.local.entity.BudgetBookEntity
 import com.ozcomingfroo.mybudget.data.local.entity.CategoryEntity
+import com.ozcomingfroo.mybudget.data.local.entity.RecurringTransactionEntity
 import com.ozcomingfroo.mybudget.data.local.entity.TransactionEntity
 import com.ozcomingfroo.mybudget.data.preferences.AppLanguageMode
 import com.ozcomingfroo.mybudget.data.preferences.AppPreferences
@@ -49,6 +50,7 @@ import com.ozcomingfroo.mybudget.data.preferences.AppPreferencesRepository
 import com.ozcomingfroo.mybudget.data.preferences.AppThemeMode
 import com.ozcomingfroo.mybudget.data.repository.BudgetBookRepository
 import com.ozcomingfroo.mybudget.data.repository.CategoryRepository
+import com.ozcomingfroo.mybudget.data.repository.RecurringTransactionRepository
 import com.ozcomingfroo.mybudget.data.repository.TransactionRepository
 import com.ozcomingfroo.mybudget.ui.onboarding.OnboardingScreen
 import com.ozcomingfroo.mybudget.ui.theme.MyBudgetTheme
@@ -64,6 +66,7 @@ private val HebrewLocale = Locale("iw")
 fun MyBudgetApp(
     transactionRepository: TransactionRepository,
     categoryRepository: CategoryRepository,
+    recurringTransactionRepository: RecurringTransactionRepository,
     budgetBookRepository: BudgetBookRepository,
     appPreferencesRepository: AppPreferencesRepository,
     clock: Clock,
@@ -99,6 +102,9 @@ fun MyBudgetApp(
             val transactions by remember(selectedBudgetBookId) {
                 selectedBudgetBookId?.let(transactionRepository::observeForBudgetBook) ?: flowOf(emptyList())
             }.collectAsState(initial = emptyList())
+            val recurringTransactions by remember(selectedBudgetBookId) {
+                selectedBudgetBookId?.let(recurringTransactionRepository::observeForBudgetBook) ?: flowOf(emptyList())
+            }.collectAsState(initial = emptyList())
 
             if (loadedPreferences.hasCompletedOnboarding) {
                 MyBudgetAppShell(
@@ -107,8 +113,10 @@ fun MyBudgetApp(
                     currentBudgetBook = currentBudgetBook,
                     categories = categories,
                     transactions = transactions,
+                    recurringTransactions = recurringTransactions,
                     categoryRepository = categoryRepository,
                     transactionRepository = transactionRepository,
+                    recurringTransactionRepository = recurringTransactionRepository,
                     appPreferencesRepository = appPreferencesRepository,
                     budgetBookRepository = budgetBookRepository,
                     clock = clock,
@@ -170,6 +178,7 @@ private enum class AppDestination(
     History("history", R.string.nav_history),
     Categories("categories", R.string.nav_categories),
     Reports("reports", R.string.nav_reports),
+    RecurringTransactions("recurring_transactions", R.string.nav_recurring_transactions),
     Settings("settings", R.string.nav_settings),
 }
 
@@ -181,8 +190,10 @@ private fun MyBudgetAppShell(
     currentBudgetBook: BudgetBookEntity?,
     categories: List<CategoryEntity>,
     transactions: List<TransactionEntity>,
+    recurringTransactions: List<RecurringTransactionEntity>,
     categoryRepository: CategoryRepository,
     transactionRepository: TransactionRepository,
+    recurringTransactionRepository: RecurringTransactionRepository,
     appPreferencesRepository: AppPreferencesRepository,
     budgetBookRepository: BudgetBookRepository,
     clock: Clock,
@@ -305,6 +316,16 @@ private fun MyBudgetAppShell(
                         transactions = transactions,
                         clock = clock,
                         onAddTransaction = { navController.navigate(AppDestination.AddTransaction.route) },
+                    )
+                }
+                composable(AppDestination.RecurringTransactions.route) {
+                    RecurringTransactionsScreen(
+                        selectedBudgetBookId = selectedBudgetBookId,
+                        categories = categories,
+                        recurringTransactions = recurringTransactions,
+                        recurringTransactionRepository = recurringTransactionRepository,
+                        clock = clock,
+                        snackbarHostState = snackbarHostState,
                     )
                 }
                 composable(AppDestination.Settings.route) {

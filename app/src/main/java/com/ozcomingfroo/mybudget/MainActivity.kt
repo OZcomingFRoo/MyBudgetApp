@@ -9,6 +9,7 @@ import com.ozcomingfroo.mybudget.data.LocalDataInitializer
 import com.ozcomingfroo.mybudget.data.preferences.AppPreferencesRepository
 import com.ozcomingfroo.mybudget.data.repository.BudgetBookRepository
 import com.ozcomingfroo.mybudget.data.repository.CategoryRepository
+import com.ozcomingfroo.mybudget.data.repository.RecurringTransactionRepository
 import com.ozcomingfroo.mybudget.data.repository.TransactionRepository
 import com.ozcomingfroo.mybudget.ui.MyBudgetApp
 import dagger.hilt.android.AndroidEntryPoint
@@ -26,6 +27,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var categoryRepository: CategoryRepository
+
+    @Inject
+    lateinit var recurringTransactionRepository: RecurringTransactionRepository
 
     @Inject
     lateinit var budgetBookRepository: BudgetBookRepository
@@ -46,6 +50,7 @@ class MainActivity : ComponentActivity() {
             MyBudgetApp(
                 transactionRepository = transactionRepository,
                 categoryRepository = categoryRepository,
+                recurringTransactionRepository = recurringTransactionRepository,
                 budgetBookRepository = budgetBookRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 clock = clock,
