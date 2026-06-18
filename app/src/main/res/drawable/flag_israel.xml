@@ -1,36 +1,27 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="72dp"
     android:height="48dp"
-    android:viewportWidth="640"
-    android:viewportHeight="480">
-    <!--
-        Based on lipis/flag-icons flags/4x3/il.svg.
-        Source: https://github.com/lipis/flag-icons
-        License: MIT, Copyright (c) 2013 Panayiotis Lipiridis.
-    -->
-    <group
-        android:scaleX="0.94"
-        android:scaleY="0.94"
-        android:translateX="82.1">
-        <path
-            android:fillColor="#FFFFFF"
-            android:fillType="evenOdd"
-            android:pathData="M619.4,512H-112V0h731.4z" />
-        <path
-            android:fillColor="#0038B8"
-            android:fillType="evenOdd"
-            android:pathData="M619.4,115.2H-112V48h731.4zM619.4,465.7H-112v-67.2h731.4zM136.4,190.7l110.1,191.6L359,191.6z" />
-        <path
-            android:fillColor="#FFFFFF"
-            android:fillType="evenOdd"
-            android:pathData="M225.8,317.8l20.9,35.5l21.4,-35.3z" />
-        <path
-            android:fillColor="#0038B8"
-            android:fillType="evenOdd"
-            android:pathData="M136,320.6L246.2,129l112.4,190.8z" />
-        <path
-            android:fillColor="#FFFFFF"
-            android:fillType="evenOdd"
-            android:pathData="M225.8,191.6l20.9,-35.5l21.4,35.4zM182,271.1l-21.7,36l41,-0.1l-19.3,-36zM160.7,204.6l41.2,0.3l-19.8,36.3zM311.9,271.6l20.9,35.5l-41.7,-0.5zM332.4,204.6l-41.2,0.3l19.8,36.3zM218.1,204.6L189.7,256l28.8,50.3l52.8,1.2l32,-51.5l-29.6,-52z" />
-    </group>
+    android:viewportWidth="64"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M0,0 H64 V48 H0 Z" />
+    <path
+        android:fillColor="#0038B8"
+        android:pathData="M0,4.5 H64 V10 H0 Z" />
+    <path
+        android:fillColor="#0038B8"
+        android:pathData="M0,38 H64 V43.5 H0 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M32,13.5 L41.093,29.25 L22.907,29.25 Z"
+        android:strokeColor="#0038B8"
+        android:strokeLineJoin="miter"
+        android:strokeWidth="2.35" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M32,34.5 L22.907,18.75 L41.093,18.75 Z"
+        android:strokeColor="#0038B8"
+        android:strokeLineJoin="miter"
+        android:strokeWidth="2.35" />
 </vector>

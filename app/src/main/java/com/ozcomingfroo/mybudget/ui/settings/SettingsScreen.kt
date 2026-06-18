@@ -508,9 +508,9 @@ private fun LanguageTile(
                 Image(
                     painter = painterResource(flagResId),
                     contentDescription = null,
-                    contentScale = ContentScale.FillBounds,
+                    contentScale = ContentScale.Fit,
                     modifier = Modifier
-                        .width(72.dp)
+                        .width(64.dp)
                         .height(48.dp)
                         .clip(flagShape)
                         .border(1.dp, MaterialTheme.colorScheme.outline, flagShape),
