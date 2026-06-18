@@ -39,7 +39,9 @@
     <string name="transaction_deleted">Transaction deleted.</string>
     <string name="undo">Undo</string>
     <string name="delete">Delete</string>
+    <string name="delete_transaction">Delete transaction</string>
     <string name="categories_intro">Starter and custom categories for the selected budget book.</string>
+    <string name="categories">Categories</string>
     <string name="no_categories_yet">No categories yet.</string>
     <string name="create_category">Create category</string>
     <string name="edit_category">Edit category</string>
@@ -54,6 +56,17 @@
     <string name="delete_category_title">Delete category?</string>
     <string name="delete_category_message">Delete %1$s from active categories? Existing transactions keep their records.</string>
     <string name="cancel">Cancel</string>
+    <string name="apply">Apply</string>
+    <string name="filters">Filters</string>
+    <string name="filters_active">Filters active</string>
+    <string name="date_range">Date range</string>
+    <string name="start_date">Start date</string>
+    <string name="end_date">End date</string>
+    <string name="transaction_type">Transaction type</string>
+    <string name="all_categories">All categories</string>
+    <string name="selected_categories_count">%1$d selected</string>
+    <string name="reset_filters">Reset filters</string>
+    <string name="no_transactions_match_filters">No transactions match these filters.</string>
     <string name="current_month">Current month</string>
     <string name="spending_by_category">Spending by category</string>
     <string name="no_report_data">No report data for this month yet.</string>
