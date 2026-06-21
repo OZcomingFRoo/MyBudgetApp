@@ -39,6 +39,7 @@ class BudgetBookRepository @Inject constructor(
         title: String,
         description: String? = null,
         selectAfterCreate: Boolean = true,
+        starterCategoryTitles: List<StarterCategoryTitle> = StarterCategories.englishTitles(),
     ): Long {
         val now = clock.instant()
         val id = database.withTransaction {
@@ -50,13 +51,37 @@ class BudgetBookRepository @Inject constructor(
                     updatedAt = now,
                 ),
             )
-            categoryDao.insertAll(StarterCategories.createForBudgetBook(budgetBookId, now))
+            categoryDao.insertAll(
+                StarterCategories.createForBudgetBook(
+                    budgetBookId = budgetBookId,
+                    now = now,
+                    titles = starterCategoryTitles,
+                ),
+            )
             budgetBookId
         }
         if (selectAfterCreate) {
             appPreferencesRepository.setSelectedBudgetBookId(id)
         }
         return id
+    }
+
+    suspend fun localizeStarterCategories(
+        budgetBookId: Long,
+        starterCategoryTitles: List<StarterCategoryTitle>,
+    ) {
+        val now = clock.instant()
+        database.withTransaction {
+            categoryDao.getForBudgetBook(budgetBookId)
+                .mapNotNull { category ->
+                    StarterCategories.matchingRelocalizedCategory(
+                        category = category,
+                        localizedTitles = starterCategoryTitles,
+                        now = now,
+                    )
+                }
+                .forEach { categoryDao.update(it) }
+        }
     }
 
     suspend fun ensureDefaultBudgetBook(): Long {

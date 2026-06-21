@@ -35,6 +35,9 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE id = :id")
     suspend fun getById(id: Long): CategoryEntity?
 
+    @Query("SELECT * FROM categories WHERE budget_book_id = :budgetBookId")
+    suspend fun getForBudgetBook(budgetBookId: Long): List<CategoryEntity>
+
     @Insert
     suspend fun insert(category: CategoryEntity): Long
 

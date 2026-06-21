@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
@@ -56,6 +57,7 @@ fun OnboardingScreen(
     appPreferencesRepository: AppPreferencesRepository,
     budgetBookRepository: BudgetBookRepository,
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var budgetBookName by rememberSaveable { mutableStateOf("Personal") }
     val completeOnboarding: () -> Unit = {
@@ -65,6 +67,13 @@ fun OnboardingScreen(
         scope.launch {
             selectedBudgetBookId?.let { budgetBookId ->
                 budgetBookRepository.renameBudgetBook(budgetBookId, budgetBookName)
+                budgetBookRepository.localizeStarterCategories(
+                    budgetBookId = budgetBookId,
+                    starterCategoryTitles = StarterCategoryResources.resolveTitles(
+                        context = context,
+                        languageMode = preferences.languageMode,
+                    ),
+                )
             }
             appPreferencesRepository.setHasCompletedOnboarding(true)
         }
