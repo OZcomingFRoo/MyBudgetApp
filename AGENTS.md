@@ -84,6 +84,8 @@ Use a feature-first package structure, with shared `data`, `domain`, and `core` 
 
 Use Room for persistent app data. The current local data model is `BudgetBook`, `Category`, `Transaction`, and `RecurringTransaction`. Do not add a formal `Budget` model unless explicitly requested.
 
+`BudgetBookEntity` stores cached all-time totals in integer minor units through `totalIncomeMinor` and `totalExpenseMinor`. Any transaction insert, update, delete, undo/restore, or recurring transaction generation must keep those cached totals in sync with the transaction table. The home-screen balance widget reads the selected budget book's cached balance (`totalIncomeMinor - totalExpenseMinor`) instead of aggregating all transactions on each widget update.
+
 Use DataStore for settings.
 
 Use Hilt for dependency injection.
