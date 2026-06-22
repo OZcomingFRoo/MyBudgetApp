@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DrawerValue
@@ -33,6 +34,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
@@ -114,6 +116,7 @@ fun MyBudgetApp(
                     preferences = loadedPreferences,
                     selectedBudgetBookId = selectedBudgetBookId,
                     currentBudgetBook = currentBudgetBook,
+                    budgetBooks = budgetBooks,
                     archivedBudgetBooks = archivedBudgetBooks,
                     categories = categories,
                     transactions = transactions,
@@ -195,6 +198,7 @@ private fun MyBudgetAppShell(
     preferences: AppPreferences,
     selectedBudgetBookId: Long?,
     currentBudgetBook: BudgetBookEntity?,
+    budgetBooks: List<BudgetBookEntity>,
     archivedBudgetBooks: List<BudgetBookEntity>,
     categories: List<CategoryEntity>,
     transactions: List<TransactionEntity>,
@@ -248,7 +252,24 @@ private fun MyBudgetAppShell(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text(stringResource(currentDestination.titleRes)) },
+                    title = {
+                        Column {
+                            Text(
+                                text = stringResource(currentDestination.titleRes),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            currentBudgetBook?.title?.takeIf { it.isNotBlank() }?.let { accountTitle ->
+                                Text(
+                                    text = accountTitle,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                    },
                     navigationIcon = {
                         IconButton(
                             onClick = { scope.launch { drawerState.open() } },

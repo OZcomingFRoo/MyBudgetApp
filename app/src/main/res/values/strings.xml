@@ -179,7 +179,7 @@
     <string name="create_account_body">Set up a separate budget book for another person, household, freelance work, or small business.</string>
     <string name="create_account_confirmation_title">Create a new account?</string>
     <string name="create_account_confirmation_message">This opens setup for a new budget book. You can cancel before saving.</string>
-    <string name="edit_account">Edit account</string>
+    <string name="edit_account">Edit</string>
     <string name="current_account">Current</string>
     <string name="active_accounts">Active</string>
     <string name="archived_accounts">Archived</string>
