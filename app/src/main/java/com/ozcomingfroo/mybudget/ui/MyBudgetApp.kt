@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DrawerValue
@@ -33,6 +34,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
@@ -95,6 +97,9 @@ fun MyBudgetApp(
             val budgetBooks by remember {
                 budgetBookRepository.observeActiveBudgetBooks()
             }.collectAsState(initial = emptyList())
+            val archivedBudgetBooks by remember {
+                budgetBookRepository.observeArchivedBudgetBooks()
+            }.collectAsState(initial = emptyList())
             val currentBudgetBook = budgetBooks.firstOrNull { it.id == selectedBudgetBookId }
             val categories by remember(selectedBudgetBookId) {
                 selectedBudgetBookId?.let(categoryRepository::observeActiveForBudgetBook) ?: flowOf(emptyList())
@@ -111,6 +116,8 @@ fun MyBudgetApp(
                     preferences = loadedPreferences,
                     selectedBudgetBookId = selectedBudgetBookId,
                     currentBudgetBook = currentBudgetBook,
+                    budgetBooks = budgetBooks,
+                    archivedBudgetBooks = archivedBudgetBooks,
                     categories = categories,
                     transactions = transactions,
                     recurringTransactions = recurringTransactions,
@@ -172,6 +179,7 @@ private fun LocalizedApp(
 private enum class AppDestination(
     val route: String,
     val titleRes: Int,
+    val showInDrawer: Boolean = true,
 ) {
     Dashboard("dashboard", R.string.nav_dashboard),
     AddTransaction("add_transaction", R.string.nav_add_transaction),
@@ -179,6 +187,8 @@ private enum class AppDestination(
     Categories("categories", R.string.nav_categories),
     Reports("reports", R.string.nav_reports),
     RecurringTransactions("recurring_transactions", R.string.nav_recurring_transactions),
+    Accounts("accounts", R.string.nav_accounts),
+    CreateAccount("create_account", R.string.create_account, showInDrawer = false),
     Settings("settings", R.string.nav_settings),
 }
 
@@ -188,6 +198,8 @@ private fun MyBudgetAppShell(
     preferences: AppPreferences,
     selectedBudgetBookId: Long?,
     currentBudgetBook: BudgetBookEntity?,
+    budgetBooks: List<BudgetBookEntity>,
+    archivedBudgetBooks: List<BudgetBookEntity>,
     categories: List<CategoryEntity>,
     transactions: List<TransactionEntity>,
     recurringTransactions: List<RecurringTransactionEntity>,
@@ -217,7 +229,7 @@ private fun MyBudgetAppShell(
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(24.dp),
                 )
-                AppDestination.entries.forEach { destination ->
+                AppDestination.entries.filter { it.showInDrawer }.forEach { destination ->
                     NavigationDrawerItem(
                         label = { Text(stringResource(destination.titleRes)) },
                         selected = currentRoute == destination.route,
@@ -240,7 +252,24 @@ private fun MyBudgetAppShell(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text(stringResource(currentDestination.titleRes)) },
+                    title = {
+                        Column {
+                            Text(
+                                text = stringResource(currentDestination.titleRes),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            currentBudgetBook?.title?.takeIf { it.isNotBlank() }?.let { accountTitle ->
+                                Text(
+                                    text = accountTitle,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                    },
                     navigationIcon = {
                         IconButton(
                             onClick = { scope.launch { drawerState.open() } },
@@ -326,6 +355,36 @@ private fun MyBudgetAppShell(
                         recurringTransactionRepository = recurringTransactionRepository,
                         clock = clock,
                         snackbarHostState = snackbarHostState,
+                    )
+                }
+                composable(AppDestination.Accounts.route) {
+                    AccountsScreen(
+                        budgetBooks = budgetBooks,
+                        archivedBudgetBooks = archivedBudgetBooks,
+                        selectedBudgetBookId = selectedBudgetBookId,
+                        appPreferencesRepository = appPreferencesRepository,
+                        budgetBookRepository = budgetBookRepository,
+                        snackbarHostState = snackbarHostState,
+                        onCreateAccount = { navController.navigate(AppDestination.CreateAccount.route) },
+                    )
+                }
+                composable(AppDestination.CreateAccount.route) {
+                    CreateAccountScreen(
+                        preferences = preferences,
+                        budgetBookRepository = budgetBookRepository,
+                        snackbarHostState = snackbarHostState,
+                        onCreated = {
+                            navController.navigate(AppDestination.Accounts.route) {
+                                popUpTo(AppDestination.Accounts.route)
+                                launchSingleTop = true
+                            }
+                        },
+                        onCancel = {
+                            navController.navigate(AppDestination.Accounts.route) {
+                                popUpTo(AppDestination.Accounts.route)
+                                launchSingleTop = true
+                            }
+                        },
                     )
                 }
                 composable(AppDestination.Settings.route) {
