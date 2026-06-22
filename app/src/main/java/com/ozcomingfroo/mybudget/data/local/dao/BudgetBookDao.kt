@@ -14,6 +14,9 @@ interface BudgetBookDao {
     @Query("SELECT * FROM budget_books WHERE archived_at IS NULL ORDER BY title")
     fun observeActiveBudgetBooks(): Flow<List<BudgetBookEntity>>
 
+    @Query("SELECT * FROM budget_books WHERE archived_at IS NOT NULL ORDER BY title")
+    fun observeArchivedBudgetBooks(): Flow<List<BudgetBookEntity>>
+
     @Query("SELECT * FROM budget_books WHERE id = :id")
     suspend fun getById(id: Long): BudgetBookEntity?
 
@@ -22,6 +25,9 @@ interface BudgetBookDao {
 
     @Query("SELECT COUNT(*) FROM budget_books")
     suspend fun count(): Int
+
+    @Query("SELECT COUNT(*) FROM budget_books WHERE archived_at IS NULL")
+    suspend fun activeCount(): Int
 
     @Insert
     suspend fun insert(budgetBook: BudgetBookEntity): Long
@@ -34,4 +40,7 @@ interface BudgetBookDao {
 
     @Query("UPDATE budget_books SET archived_at = :archivedAt, updated_at = :updatedAt WHERE id = :id")
     suspend fun archive(id: Long, archivedAt: Instant, updatedAt: Instant)
+
+    @Query("UPDATE budget_books SET archived_at = NULL, updated_at = :updatedAt WHERE id = :id AND archived_at IS NOT NULL")
+    suspend fun restore(id: Long, updatedAt: Instant): Int
 }

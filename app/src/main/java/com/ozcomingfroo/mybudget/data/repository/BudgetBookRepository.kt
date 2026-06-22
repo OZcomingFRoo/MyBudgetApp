@@ -22,7 +22,10 @@ class BudgetBookRepository @Inject constructor(
     fun observeActiveBudgetBooks(): Flow<List<BudgetBookEntity>> =
         budgetBookDao.observeActiveBudgetBooks()
 
-    suspend fun renameBudgetBook(id: Long, title: String) {
+    fun observeArchivedBudgetBooks(): Flow<List<BudgetBookEntity>> =
+        budgetBookDao.observeArchivedBudgetBooks()
+
+    suspend fun updateBudgetBookDetails(id: Long, title: String, description: String?) {
         val trimmedTitle = title.trim()
         if (trimmedTitle.isBlank()) return
 
@@ -30,9 +33,15 @@ class BudgetBookRepository @Inject constructor(
         budgetBookDao.update(
             existing.copy(
                 title = trimmedTitle,
+                description = description?.trim()?.ifBlank { null },
                 updatedAt = clock.instant(),
             ),
         )
+    }
+
+    suspend fun renameBudgetBook(id: Long, title: String) {
+        val existing = budgetBookDao.getById(id) ?: return
+        updateBudgetBookDetails(id = id, title = title, description = existing.description)
     }
 
     suspend fun createBudgetBook(
@@ -84,6 +93,35 @@ class BudgetBookRepository @Inject constructor(
         }
     }
 
+    suspend fun archiveBudgetBook(id: Long): Boolean {
+        val selectedBudgetBookId = appPreferencesRepository.getPreferences().selectedBudgetBookId
+        return database.withTransaction {
+            if (!canArchiveBudgetBook(id = id, selectedBudgetBookId = selectedBudgetBookId)) {
+                false
+            } else {
+                val now = clock.instant()
+                budgetBookDao.archive(id = id, archivedAt = now, updatedAt = now)
+                true
+            }
+        }
+    }
+
+    suspend fun deleteBudgetBookPermanently(id: Long): Boolean {
+        val selectedBudgetBookId = appPreferencesRepository.getPreferences().selectedBudgetBookId
+        return database.withTransaction {
+            if (!canDeleteBudgetBook(id = id, selectedBudgetBookId = selectedBudgetBookId)) {
+                false
+            } else {
+                val existing = budgetBookDao.getById(id) ?: return@withTransaction false
+                budgetBookDao.delete(existing)
+                true
+            }
+        }
+    }
+
+    suspend fun restoreBudgetBook(id: Long): Boolean =
+        budgetBookDao.restore(id = id, updatedAt = clock.instant()) > 0
+
     suspend fun ensureDefaultBudgetBook(): Long {
         val existing = budgetBookDao.getFirst()
         if (existing != null) {
@@ -93,5 +131,19 @@ class BudgetBookRepository @Inject constructor(
             return existing.id
         }
         return createBudgetBook(title = "Personal")
+    }
+
+    private suspend fun canArchiveBudgetBook(id: Long, selectedBudgetBookId: Long?): Boolean {
+        if (selectedBudgetBookId == id) return false
+        val existing = budgetBookDao.getById(id) ?: return false
+        if (existing.archivedAt != null) return false
+
+        return budgetBookDao.activeCount() > 1
+    }
+
+    private suspend fun canDeleteBudgetBook(id: Long, selectedBudgetBookId: Long?): Boolean {
+        if (selectedBudgetBookId == id) return false
+        val existing = budgetBookDao.getById(id) ?: return false
+        return existing.archivedAt != null || budgetBookDao.activeCount() > 1
     }
 }

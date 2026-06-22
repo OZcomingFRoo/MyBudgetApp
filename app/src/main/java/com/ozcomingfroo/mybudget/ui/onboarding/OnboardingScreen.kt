@@ -13,13 +13,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -38,7 +36,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.ozcomingfroo.mybudget.R
 import com.ozcomingfroo.mybudget.data.preferences.AppLanguageMode
@@ -60,13 +57,18 @@ fun OnboardingScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var budgetBookName by rememberSaveable { mutableStateOf("Personal") }
+    var budgetBookDescription by rememberSaveable { mutableStateOf("") }
     val completeOnboarding: () -> Unit = {
         scope.launch { appPreferencesRepository.setHasCompletedOnboarding(true) }
     }
     val startBudgeting: () -> Unit = {
         scope.launch {
             selectedBudgetBookId?.let { budgetBookId ->
-                budgetBookRepository.renameBudgetBook(budgetBookId, budgetBookName)
+                budgetBookRepository.updateBudgetBookDetails(
+                    id = budgetBookId,
+                    title = budgetBookName,
+                    description = budgetBookDescription,
+                )
                 budgetBookRepository.localizeStarterCategories(
                     budgetBookId = budgetBookId,
                     starterCategoryTitles = StarterCategoryResources.resolveTitles(
@@ -103,23 +105,16 @@ fun OnboardingScreen(
             }
             item {
                 OnboardingSection(title = stringResource(R.string.onboarding_budget_book_title)) {
-                    OutlinedTextField(
-                        value = budgetBookName,
-                        onValueChange = { budgetBookName = it },
-                        label = { Text(stringResource(R.string.budget_book_name)) },
-                        supportingText = {
-                            Text(
-                                if (selectedBudgetBookId == null) {
-                                    stringResource(R.string.preparing_budget_book)
-                                } else {
-                                    stringResource(R.string.budget_book_name_helper)
-                                },
-                            )
+                    BudgetBookDetailsFields(
+                        title = budgetBookName,
+                        onTitleChange = { budgetBookName = it },
+                        description = budgetBookDescription,
+                        onDescriptionChange = { budgetBookDescription = it },
+                        titleSupportingText = if (selectedBudgetBookId == null) {
+                            stringResource(R.string.preparing_budget_book)
+                        } else {
+                            stringResource(R.string.budget_book_name_helper)
                         },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.Words,
-                        ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 12.dp),
