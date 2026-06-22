@@ -6,6 +6,8 @@ import com.ozcomingfroo.mybudget.data.local.dao.RecurringTransactionDao
 import com.ozcomingfroo.mybudget.data.local.dao.TransactionDao
 import com.ozcomingfroo.mybudget.data.local.entity.RecurringTransactionEntity
 import com.ozcomingfroo.mybudget.data.local.entity.TransactionEntity
+import com.ozcomingfroo.mybudget.data.repository.TransactionRepository
+import com.ozcomingfroo.mybudget.widget.BalanceWidgetUpdateNotifier
 import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
@@ -16,15 +18,21 @@ class RecurringTransactionGenerator @Inject constructor(
     private val database: MyBudgetDatabase,
     private val recurringTransactionDao: RecurringTransactionDao,
     private val transactionDao: TransactionDao,
+    private val transactionRepository: TransactionRepository,
+    private val widgetUpdateNotifier: BalanceWidgetUpdateNotifier,
     private val clock: Clock,
 ) {
     suspend fun generateDue(today: LocalDate = LocalDate.now(clock)): Int {
         val dueRules = recurringTransactionDao.getDue(today)
         if (dueRules.isEmpty()) return 0
 
-        return database.withTransaction {
+        val generatedCount = database.withTransaction {
             dueRules.sumOf { rule -> generateDueForRule(rule, today) }
         }
+        if (generatedCount > 0) {
+            widgetUpdateNotifier.notifyWidgetsChanged()
+        }
+        return generatedCount
     }
 
     private suspend fun generateDueForRule(
@@ -59,6 +67,7 @@ class RecurringTransactionGenerator @Inject constructor(
 
         if (generatedTransactions.isNotEmpty()) {
             transactionDao.insertAll(generatedTransactions)
+            transactionRepository.addCachedTotalsForInsertedTransactions(generatedTransactions)
             recurringTransactionDao.update(
                 rule.copy(
                     lastRunDate = lastGeneratedDate,

@@ -6,6 +6,7 @@ import com.ozcomingfroo.mybudget.data.local.dao.BudgetBookDao
 import com.ozcomingfroo.mybudget.data.local.dao.CategoryDao
 import com.ozcomingfroo.mybudget.data.local.entity.BudgetBookEntity
 import com.ozcomingfroo.mybudget.data.preferences.AppPreferencesRepository
+import com.ozcomingfroo.mybudget.widget.BalanceWidgetUpdateNotifier
 import java.time.Clock
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -17,6 +18,7 @@ class BudgetBookRepository @Inject constructor(
     private val budgetBookDao: BudgetBookDao,
     private val categoryDao: CategoryDao,
     private val appPreferencesRepository: AppPreferencesRepository,
+    private val widgetUpdateNotifier: BalanceWidgetUpdateNotifier? = null,
     private val clock: Clock,
 ) {
     fun observeActiveBudgetBooks(): Flow<List<BudgetBookEntity>> =
@@ -37,6 +39,7 @@ class BudgetBookRepository @Inject constructor(
                 updatedAt = clock.instant(),
             ),
         )
+        widgetUpdateNotifier?.notifyWidgetsChanged()
     }
 
     suspend fun renameBudgetBook(id: Long, title: String) {
@@ -71,6 +74,8 @@ class BudgetBookRepository @Inject constructor(
         }
         if (selectAfterCreate) {
             appPreferencesRepository.setSelectedBudgetBookId(id)
+        } else {
+            widgetUpdateNotifier?.notifyWidgetsChanged()
         }
         return id
     }
@@ -101,6 +106,7 @@ class BudgetBookRepository @Inject constructor(
             } else {
                 val now = clock.instant()
                 budgetBookDao.archive(id = id, archivedAt = now, updatedAt = now)
+                widgetUpdateNotifier?.notifyWidgetsChanged()
                 true
             }
         }
@@ -114,13 +120,19 @@ class BudgetBookRepository @Inject constructor(
             } else {
                 val existing = budgetBookDao.getById(id) ?: return@withTransaction false
                 budgetBookDao.delete(existing)
+                widgetUpdateNotifier?.notifyWidgetsChanged()
                 true
             }
         }
     }
 
-    suspend fun restoreBudgetBook(id: Long): Boolean =
-        budgetBookDao.restore(id = id, updatedAt = clock.instant()) > 0
+    suspend fun restoreBudgetBook(id: Long): Boolean {
+        val restored = budgetBookDao.restore(id = id, updatedAt = clock.instant()) > 0
+        if (restored) {
+            widgetUpdateNotifier?.notifyWidgetsChanged()
+        }
+        return restored
+    }
 
     suspend fun ensureDefaultBudgetBook(): Long {
         val existing = budgetBookDao.getFirst()

@@ -30,7 +30,10 @@ object DataModule {
         context,
         MyBudgetDatabase::class.java,
         "my_budget.db",
-    ).addMigrations(MyBudgetDatabase.Migration1To2).build()
+    ).addMigrations(
+        MyBudgetDatabase.Migration1To2,
+        MyBudgetDatabase.Migration2To3,
+    ).build()
 
     @Provides
     fun provideBudgetBookDao(database: MyBudgetDatabase) = database.budgetBookDao()

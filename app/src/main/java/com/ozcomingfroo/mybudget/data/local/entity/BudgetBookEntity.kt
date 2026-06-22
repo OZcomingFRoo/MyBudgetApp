@@ -11,6 +11,10 @@ data class BudgetBookEntity(
     val id: Long = 0,
     val title: String,
     val description: String? = null,
+    @ColumnInfo(name = "total_income_minor")
+    val totalIncomeMinor: Long = 0,
+    @ColumnInfo(name = "total_expense_minor")
+    val totalExpenseMinor: Long = 0,
     @ColumnInfo(name = "archived_at")
     val archivedAt: Instant? = null,
     @ColumnInfo(name = "created_at")

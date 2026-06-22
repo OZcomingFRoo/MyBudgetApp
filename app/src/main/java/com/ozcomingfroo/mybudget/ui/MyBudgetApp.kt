@@ -23,6 +23,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -72,6 +73,8 @@ fun MyBudgetApp(
     budgetBookRepository: BudgetBookRepository,
     appPreferencesRepository: AppPreferencesRepository,
     clock: Clock,
+    launchDestination: AppLaunchDestination? = null,
+    onLaunchDestinationHandled: () -> Unit = {},
 ) {
     val preferences by remember(appPreferencesRepository) {
         appPreferencesRepository.preferences.map<AppPreferences, AppPreferences?> { it }
@@ -127,6 +130,8 @@ fun MyBudgetApp(
                     appPreferencesRepository = appPreferencesRepository,
                     budgetBookRepository = budgetBookRepository,
                     clock = clock,
+                    launchDestination = launchDestination,
+                    onLaunchDestinationHandled = onLaunchDestinationHandled,
                 )
             } else {
                 OnboardingScreen(
@@ -209,6 +214,8 @@ private fun MyBudgetAppShell(
     appPreferencesRepository: AppPreferencesRepository,
     budgetBookRepository: BudgetBookRepository,
     clock: Clock,
+    launchDestination: AppLaunchDestination?,
+    onLaunchDestinationHandled: () -> Unit,
 ) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -218,6 +225,25 @@ private fun MyBudgetAppShell(
     val currentRoute = backStackEntry?.destination?.route ?: AppDestination.Dashboard.route
     val currentDestination = AppDestination.entries.firstOrNull { it.route == currentRoute }
         ?: AppDestination.Dashboard
+
+    LaunchedEffect(launchDestination) {
+        when (launchDestination) {
+            AppLaunchDestination.Dashboard -> {
+                navController.navigate(AppDestination.Dashboard.route) {
+                    popUpTo(AppDestination.Dashboard.route)
+                    launchSingleTop = true
+                }
+                onLaunchDestinationHandled()
+            }
+            AppLaunchDestination.AddTransaction -> {
+                navController.navigate(AppDestination.AddTransaction.route) {
+                    launchSingleTop = true
+                }
+                onLaunchDestinationHandled()
+            }
+            null -> Unit
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,

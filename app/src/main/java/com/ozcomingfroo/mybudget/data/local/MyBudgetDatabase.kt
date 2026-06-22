@@ -21,7 +21,7 @@ import com.ozcomingfroo.mybudget.data.local.entity.TransactionEntity
         TransactionEntity::class,
         RecurringTransactionEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 @TypeConverters(MyBudgetTypeConverters::class)
@@ -40,6 +40,45 @@ abstract class MyBudgetDatabase : RoomDatabase() {
                     SET occurred_date = occurred_date || 'T00:00'
                     WHERE occurred_date IS NOT NULL
                     AND instr(occurred_date, 'T') = 0
+                    """.trimIndent(),
+                )
+            }
+        }
+
+        val Migration2To3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    ALTER TABLE budget_books
+                    ADD COLUMN total_income_minor INTEGER NOT NULL DEFAULT 0
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    ALTER TABLE budget_books
+                    ADD COLUMN total_expense_minor INTEGER NOT NULL DEFAULT 0
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    UPDATE budget_books
+                    SET total_income_minor = COALESCE((
+                        SELECT SUM(amount_minor)
+                        FROM transactions
+                        WHERE transactions.budget_book_id = budget_books.id
+                        AND transactions.type = 'INCOME'
+                    ), 0)
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    UPDATE budget_books
+                    SET total_expense_minor = COALESCE((
+                        SELECT SUM(amount_minor)
+                        FROM transactions
+                        WHERE transactions.budget_book_id = budget_books.id
+                        AND transactions.type = 'EXPENSE'
+                    ), 0)
                     """.trimIndent(),
                 )
             }

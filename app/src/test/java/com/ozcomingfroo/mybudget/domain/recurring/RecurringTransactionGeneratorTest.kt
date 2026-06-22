@@ -8,6 +8,8 @@ import com.ozcomingfroo.mybudget.data.local.entity.BudgetBookEntity
 import com.ozcomingfroo.mybudget.data.local.entity.RecurringTransactionEntity
 import com.ozcomingfroo.mybudget.data.local.model.RecurringFrequency
 import com.ozcomingfroo.mybudget.data.local.model.TransactionType
+import com.ozcomingfroo.mybudget.data.repository.TransactionRepository
+import com.ozcomingfroo.mybudget.widget.BalanceWidgetUpdateNotifier
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -48,6 +50,14 @@ class RecurringTransactionGeneratorTest {
             database = database,
             recurringTransactionDao = database.recurringTransactionDao(),
             transactionDao = database.transactionDao(),
+            transactionRepository = TransactionRepository(
+                database = database,
+                transactionDao = database.transactionDao(),
+                budgetBookDao = database.budgetBookDao(),
+                clock = clock,
+                widgetUpdateNotifier = BalanceWidgetUpdateNotifier(context),
+            ),
+            widgetUpdateNotifier = BalanceWidgetUpdateNotifier(context),
             clock = clock,
         )
         val now = clock.instant()
@@ -87,5 +97,6 @@ class RecurringTransactionGeneratorTest {
         assertEquals(listOf(ruleId, ruleId, ruleId, ruleId), generatedTransactions.map { it.recurringTransactionId })
         assertEquals(LocalDate.of(2026, 4, 30), updatedRule?.lastRunDate)
         assertEquals(LocalDate.of(2026, 5, 31), updatedRule?.nextRunDate)
+        assertEquals(1_800_000L, database.budgetBookDao().getById(budgetBookId)?.totalExpenseMinor)
     }
 }

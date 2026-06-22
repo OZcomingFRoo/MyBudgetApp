@@ -219,4 +219,8 @@
     <string name="edit_transaction">Edit transaction</string>
     <string name="transaction_updated">Transaction updated.</string>
     <string name="transaction_subtitle_separator"> • </string>
+    <string name="widget_balance_title">Balance</string>
+    <string name="widget_add_short">+ ADD</string>
+    <string name="widget_balance_description">Shows the selected account balance and a shortcut to add a transaction.</string>
+    <string name="widget_no_account">No account selected</string>
 </resources>

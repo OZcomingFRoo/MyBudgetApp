@@ -23,6 +23,9 @@ interface BudgetBookDao {
     @Query("SELECT * FROM budget_books ORDER BY id LIMIT 1")
     suspend fun getFirst(): BudgetBookEntity?
 
+    @Query("SELECT * FROM budget_books WHERE archived_at IS NULL ORDER BY title LIMIT 1")
+    suspend fun getFirstActive(): BudgetBookEntity?
+
     @Query("SELECT COUNT(*) FROM budget_books")
     suspend fun count(): Int
 
@@ -43,4 +46,20 @@ interface BudgetBookDao {
 
     @Query("UPDATE budget_books SET archived_at = NULL, updated_at = :updatedAt WHERE id = :id AND archived_at IS NOT NULL")
     suspend fun restore(id: Long, updatedAt: Instant): Int
+
+    @Query(
+        """
+        UPDATE budget_books
+        SET total_income_minor = total_income_minor + :incomeDelta,
+            total_expense_minor = total_expense_minor + :expenseDelta,
+            updated_at = :updatedAt
+        WHERE id = :id
+        """,
+    )
+    suspend fun updateTotals(
+        id: Long,
+        incomeDelta: Long,
+        expenseDelta: Long,
+        updatedAt: Instant,
+    )
 }

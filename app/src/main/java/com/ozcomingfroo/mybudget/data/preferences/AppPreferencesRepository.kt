@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.ozcomingfroo.mybudget.widget.BalanceWidgetUpdateNotifier
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +24,7 @@ data class AppPreferences(
 @Singleton
 class AppPreferencesRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>,
+    private val widgetUpdateNotifier: BalanceWidgetUpdateNotifier? = null,
 ) {
     val preferences: Flow<AppPreferences> = dataStore.data.map { preferences ->
         AppPreferences(
@@ -40,6 +42,7 @@ class AppPreferencesRepository @Inject constructor(
         dataStore.edit { preferences ->
             preferences[SELECTED_BUDGET_BOOK_ID] = id
         }
+        widgetUpdateNotifier?.notifyWidgetsChanged()
     }
 
     suspend fun getPreferences(): AppPreferences = preferences.first()
@@ -48,12 +51,14 @@ class AppPreferencesRepository @Inject constructor(
         dataStore.edit { preferences ->
             preferences[THEME_MODE] = themeMode.name
         }
+        widgetUpdateNotifier?.notifyWidgetsChanged()
     }
 
     suspend fun setLanguageMode(languageMode: AppLanguageMode) {
         dataStore.edit { preferences ->
             preferences[LANGUAGE_MODE] = languageMode.name
         }
+        widgetUpdateNotifier?.notifyWidgetsChanged()
     }
 
     suspend fun setHasCompletedOnboarding(completed: Boolean) {
