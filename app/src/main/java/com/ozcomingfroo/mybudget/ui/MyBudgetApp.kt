@@ -388,6 +388,7 @@ private fun MyBudgetAppShell(
                         budgetBooks = budgetBooks,
                         archivedBudgetBooks = archivedBudgetBooks,
                         selectedBudgetBookId = selectedBudgetBookId,
+                        languageMode = preferences.languageMode,
                         appPreferencesRepository = appPreferencesRepository,
                         budgetBookRepository = budgetBookRepository,
                         snackbarHostState = snackbarHostState,
@@ -396,8 +397,15 @@ private fun MyBudgetAppShell(
                 }
                 composable(AppDestination.CreateAccount.route) {
                     CreateAccountScreen(
-                        preferences = preferences,
-                        budgetBookRepository = budgetBookRepository,
+                        initialSeedLanguageMode = preferences.languageMode,
+                        createBudgetBook = { title, description, starterCategoryTitles ->
+                            budgetBookRepository.createBudgetBook(
+                                title = title,
+                                description = description,
+                                selectAfterCreate = true,
+                                starterCategoryTitles = starterCategoryTitles,
+                            )
+                        },
                         snackbarHostState = snackbarHostState,
                         onCreated = {
                             navController.navigate(AppDestination.Accounts.route) {

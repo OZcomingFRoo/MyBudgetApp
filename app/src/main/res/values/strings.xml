@@ -147,6 +147,7 @@
     <string name="theme_system">Use system setting</string>
     <string name="language">Language</string>
     <string name="language_system">Use system setting</string>
+    <string name="language_system_short">System</string>
     <string name="language_english_us">English</string>
     <string name="language_hebrew">Hebrew</string>
     <string name="skip">Skip</string>
@@ -177,8 +178,10 @@
     <string name="create_account">Create account</string>
     <string name="create_account_title">Create account</string>
     <string name="create_account_body">Set up a separate budget book for another person, household, freelance work, or small business.</string>
-    <string name="create_account_confirmation_title">Create a new account?</string>
-    <string name="create_account_confirmation_message">This opens setup for a new budget book. You can cancel before saving.</string>
+    <string name="create_account_cancel">Cancel</string>
+    <string name="create_account_submit">Create account</string>
+    <string name="starter_categories_language">Starter categories language</string>
+    <string name="starter_categories_language_helper">Choose the language for starter categories in this account only. The app language will not change.</string>
     <string name="edit_account">Edit</string>
     <string name="current_account">Current</string>
     <string name="active_accounts">Active</string>

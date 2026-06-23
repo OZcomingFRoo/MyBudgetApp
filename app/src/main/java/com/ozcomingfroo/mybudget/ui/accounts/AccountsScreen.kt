@@ -1,18 +1,22 @@
 package com.ozcomingfroo.mybudget.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -23,6 +27,7 @@ import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.SwitchAccount
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,6 +41,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -48,40 +54,52 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ozcomingfroo.mybudget.R
 import com.ozcomingfroo.mybudget.data.local.entity.BudgetBookEntity
-import com.ozcomingfroo.mybudget.data.preferences.AppPreferences
+import com.ozcomingfroo.mybudget.data.preferences.AppLanguageMode
 import com.ozcomingfroo.mybudget.data.preferences.AppPreferencesRepository
 import com.ozcomingfroo.mybudget.data.repository.BudgetBookRepository
+import com.ozcomingfroo.mybudget.data.repository.StarterCategoryTitle
 import com.ozcomingfroo.mybudget.ui.onboarding.BudgetBookDetailsFields
 import com.ozcomingfroo.mybudget.ui.onboarding.StarterCategoryResources
+import java.util.Locale
 import kotlinx.coroutines.launch
+
+@Suppress("DEPRECATION")
+private val HebrewLocale = Locale("iw")
 
 @Composable
 internal fun AccountsScreen(
     budgetBooks: List<BudgetBookEntity>,
     archivedBudgetBooks: List<BudgetBookEntity>,
     selectedBudgetBookId: Long?,
+    languageMode: AppLanguageMode,
     appPreferencesRepository: AppPreferencesRepository,
     budgetBookRepository: BudgetBookRepository,
     snackbarHostState: SnackbarHostState,
     onCreateAccount: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val accountResourceContext = remember(context, languageMode) { context.localizedFor(languageMode) }
     val scope = rememberCoroutineScope()
     var editingBudgetBook by remember { mutableStateOf<BudgetBookEntity?>(null) }
     var restoringBudgetBook by remember { mutableStateOf<BudgetBookEntity?>(null) }
     var deletingArchivedBudgetBook by remember { mutableStateOf<BudgetBookEntity?>(null) }
-    var showCreateConfirmation by remember { mutableStateOf(false) }
     var selectedAccountView by rememberSaveable { mutableStateOf(AccountListView.Active) }
-    val accountSwitchedMessage = stringResource(R.string.account_switched)
-    val accountUpdatedMessage = stringResource(R.string.account_updated)
-    val accountArchivedMessage = stringResource(R.string.account_archived)
-    val accountDeletedMessage = stringResource(R.string.account_deleted_permanently)
-    val accountRestoredMessage = stringResource(R.string.account_restored)
-    val blockedMessage = stringResource(R.string.account_delete_blocked)
+    val accountSwitchedMessage = accountResourceContext.getString(R.string.account_switched)
+    val accountUpdatedMessage = accountResourceContext.getString(R.string.account_updated)
+    val accountArchivedMessage = accountResourceContext.getString(R.string.account_archived)
+    val accountDeletedMessage = accountResourceContext.getString(R.string.account_deleted_permanently)
+    val accountRestoredMessage = accountResourceContext.getString(R.string.account_restored)
+    val blockedMessage = accountResourceContext.getString(R.string.account_delete_blocked)
 
     Column(
         modifier = Modifier
@@ -91,7 +109,7 @@ internal fun AccountsScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Button(
-            onClick = { showCreateConfirmation = true },
+            onClick = onCreateAccount,
             modifier = Modifier.fillMaxWidth(),
         ) {
             Icon(
@@ -146,6 +164,10 @@ internal fun AccountsScreen(
         AccountEditorSheet(
             budgetBook = budgetBook,
             canRemove = budgetBook.id != selectedBudgetBookId && budgetBooks.size > 1,
+            strings = accountEditorStrings(
+                context = accountResourceContext,
+                accountTitle = budgetBook.title,
+            ),
             onSave = { title, description ->
                 scope.launch {
                     budgetBookRepository.updateBudgetBookDetails(
@@ -178,8 +200,8 @@ internal fun AccountsScreen(
     restoringBudgetBook?.let { budgetBook ->
         AlertDialog(
             onDismissRequest = { restoringBudgetBook = null },
-            title = { Text(stringResource(R.string.restore_account_title)) },
-            text = { Text(stringResource(R.string.restore_account_message, budgetBook.title)) },
+            title = { Text(accountResourceContext.getString(R.string.restore_account_title)) },
+            text = { Text(accountResourceContext.getString(R.string.restore_account_message, budgetBook.title)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -193,12 +215,12 @@ internal fun AccountsScreen(
                         }
                     },
                 ) {
-                    Text(stringResource(R.string.restore_account))
+                    Text(accountResourceContext.getString(R.string.restore_account))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { restoringBudgetBook = null }) {
-                    Text(stringResource(R.string.cancel))
+                    Text(accountResourceContext.getString(R.string.cancel))
                 }
             },
         )
@@ -207,8 +229,10 @@ internal fun AccountsScreen(
     deletingArchivedBudgetBook?.let { budgetBook ->
         AlertDialog(
             onDismissRequest = { deletingArchivedBudgetBook = null },
-            title = { Text(stringResource(R.string.delete_account_permanently_title)) },
-            text = { Text(stringResource(R.string.delete_account_permanently_message, budgetBook.title)) },
+            title = { Text(accountResourceContext.getString(R.string.delete_account_permanently_title)) },
+            text = {
+                Text(accountResourceContext.getString(R.string.delete_account_permanently_message, budgetBook.title))
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -221,35 +245,12 @@ internal fun AccountsScreen(
                         }
                     },
                 ) {
-                    Text(stringResource(R.string.delete_account_permanently))
+                    Text(accountResourceContext.getString(R.string.delete_account_permanently))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { deletingArchivedBudgetBook = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
-        )
-    }
-
-    if (showCreateConfirmation) {
-        AlertDialog(
-            onDismissRequest = { showCreateConfirmation = false },
-            title = { Text(stringResource(R.string.create_account_confirmation_title)) },
-            text = { Text(stringResource(R.string.create_account_confirmation_message)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showCreateConfirmation = false
-                        onCreateAccount()
-                    },
-                ) {
-                    Text(stringResource(R.string.create_account))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCreateConfirmation = false }) {
-                    Text(stringResource(R.string.cancel))
+                    Text(accountResourceContext.getString(R.string.cancel))
                 }
             },
         )
@@ -258,77 +259,213 @@ internal fun AccountsScreen(
 
 @Composable
 internal fun CreateAccountScreen(
-    preferences: AppPreferences,
-    budgetBookRepository: BudgetBookRepository,
+    initialSeedLanguageMode: AppLanguageMode,
+    createBudgetBook: suspend (String, String?, List<StarterCategoryTitle>) -> Long,
     snackbarHostState: SnackbarHostState,
     onCreated: () -> Unit,
     onCancel: () -> Unit,
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
+    val seedResourceContext = context.applicationContext ?: context
     val scope = rememberCoroutineScope()
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
-    val canSave = title.trim().isNotBlank()
+    var seedLanguageMode by rememberSaveable { mutableStateOf(initialSeedLanguageMode) }
+    var isSaving by rememberSaveable { mutableStateOf(false) }
+    val canSave = title.trim().isNotBlank() && !isSaving
     val createdMessage = stringResource(R.string.account_created)
+    val cancelLabel = stringResource(R.string.create_account_cancel)
+    val submitLabel = stringResource(R.string.create_account_submit)
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.fillMaxSize(),
     ) {
-        Text(
-            text = stringResource(R.string.create_account_title),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold,
-        )
-        Text(
-            text = stringResource(R.string.create_account_body),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        BudgetBookDetailsFields(
-            title = title,
-            onTitleChange = { title = it },
-            description = description,
-            onDescriptionChange = { description = it },
-            titleSupportingText = stringResource(R.string.budget_book_name_helper),
-        )
-        Spacer(modifier = Modifier.weight(1f))
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.create_account_title),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = stringResource(R.string.create_account_body),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            BudgetBookDetailsFields(
+                title = title,
+                onTitleChange = { title = it },
+                description = description,
+                onDescriptionChange = { description = it },
+                titleSupportingText = stringResource(R.string.budget_book_name_helper),
+                titleTestTag = "create_account_title",
+            )
+            SeedLanguageSelector(
+                selectedLanguageMode = seedLanguageMode,
+                onLanguageModeSelected = { seedLanguageMode = it },
+            )
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.background)
                 .navigationBarsPadding()
-                .imePadding(),
+                .imePadding()
+                .padding(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             OutlinedButton(
                 onClick = onCancel,
-                modifier = Modifier.weight(1f),
+                enabled = !isSaving,
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 56.dp)
+                    .testTag("create_account_cancel"),
             ) {
-                Text(stringResource(R.string.cancel))
+                Text(
+                    text = cancelLabel,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
             Button(
                 onClick = {
+                    if (isSaving || title.trim().isBlank()) return@Button
+                    isSaving = true
                     scope.launch {
-                        budgetBookRepository.createBudgetBook(
-                            title = title,
-                            description = description,
-                            selectAfterCreate = true,
-                            starterCategoryTitles = StarterCategoryResources.resolveTitles(
-                                context = context,
-                                languageMode = preferences.languageMode,
-                            ),
-                        )
-                        snackbarHostState.showSnackbar(createdMessage)
-                        onCreated()
+                        try {
+                            createBudgetBook(
+                                title,
+                                description,
+                                StarterCategoryResources.resolveTitles(
+                                    context = seedResourceContext,
+                                    languageMode = seedLanguageMode,
+                                ),
+                            )
+                            onCreated()
+                            snackbarHostState.showSnackbar(createdMessage)
+                        } finally {
+                            isSaving = false
+                        }
                     }
                 },
                 enabled = canSave,
-                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 56.dp)
+                    .testTag("create_account_save"),
             ) {
-                Text(stringResource(R.string.save))
+                Text(
+                    text = submitLabel,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SeedLanguageSelector(
+    selectedLanguageMode: AppLanguageMode,
+    onLanguageModeSelected: (AppLanguageMode) -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.starter_categories_language),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            text = stringResource(R.string.starter_categories_language_helper),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            AppLanguageMode.entries.forEach { languageMode ->
+                SeedLanguageOption(
+                    languageMode = languageMode,
+                    selected = selectedLanguageMode == languageMode,
+                    onClick = { onLanguageModeSelected(languageMode) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SeedLanguageOption(
+    languageMode: AppLanguageMode,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val label = languageMode.label()
+    val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+    val containerColor = if (selected) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+
+    Surface(
+        modifier = modifier
+            .heightIn(min = 56.dp)
+            .selectable(
+                selected = selected,
+                onClick = onClick,
+                role = Role.RadioButton,
+            )
+            .testTag("create_account_seed_language_${languageMode.name}"),
+        shape = RoundedCornerShape(8.dp),
+        color = containerColor,
+        border = BorderStroke(if (selected) 2.dp else 1.dp, borderColor),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            when (languageMode) {
+                AppLanguageMode.SYSTEM -> Text(
+                    text = stringResource(R.string.language_system_short),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center,
+                )
+
+                AppLanguageMode.EN_US -> Image(
+                    painter = painterResource(R.drawable.flag_us),
+                    contentDescription = label,
+                    modifier = Modifier.size(width = 42.dp, height = 28.dp),
+                )
+
+                AppLanguageMode.HE -> Image(
+                    painter = painterResource(R.drawable.flag_israel),
+                    contentDescription = label,
+                    modifier = Modifier.size(width = 42.dp, height = 28.dp),
+                )
             }
         }
     }
@@ -534,11 +671,65 @@ private fun ArchivedAccountRow(
     }
 }
 
+private fun accountEditorStrings(
+    context: android.content.Context,
+    accountTitle: String,
+): AccountEditorStrings {
+    return AccountEditorStrings(
+        editAccount = context.getString(R.string.edit_account),
+        budgetBookName = context.getString(R.string.budget_book_name),
+        budgetBookNameHelper = context.getString(R.string.budget_book_name_helper),
+        budgetBookDescription = context.getString(R.string.budget_book_description),
+        budgetBookDescriptionHelper = context.getString(R.string.budget_book_description_helper),
+        accountDeleteBlocked = context.getString(R.string.account_delete_blocked),
+        archive = context.getString(R.string.archive),
+        archiveAccountTitle = context.getString(R.string.archive_account_title),
+        archiveAccountMessage = context.getString(R.string.archive_account_message, accountTitle),
+        deleteAccountPermanently = context.getString(R.string.delete_account_permanently),
+        deleteAccountPermanentlyTitle = context.getString(R.string.delete_account_permanently_title),
+        deleteAccountPermanentlyMessage = context.getString(
+            R.string.delete_account_permanently_message,
+            accountTitle,
+        ),
+        cancel = context.getString(R.string.cancel),
+        save = context.getString(R.string.save),
+    )
+}
+
+private fun android.content.Context.localizedFor(languageMode: AppLanguageMode): android.content.Context {
+    val locale = when (languageMode) {
+        AppLanguageMode.SYSTEM -> return this
+        AppLanguageMode.EN_US -> Locale.US
+        AppLanguageMode.HE -> HebrewLocale
+    }
+    val configuration = android.content.res.Configuration(resources.configuration)
+    configuration.setLocale(locale)
+    return createConfigurationContext(configuration)
+}
+
+internal data class AccountEditorStrings(
+    val editAccount: String,
+    val budgetBookName: String,
+    val budgetBookNameHelper: String,
+    val budgetBookDescription: String,
+    val budgetBookDescriptionHelper: String,
+    val accountDeleteBlocked: String,
+    val archive: String,
+    val archiveAccountTitle: String,
+    val archiveAccountMessage: String,
+    val deleteAccountPermanently: String,
+    val deleteAccountPermanentlyTitle: String,
+    val deleteAccountPermanentlyMessage: String,
+    val cancel: String,
+    val save: String,
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AccountEditorSheet(
+internal fun AccountEditorSheet(
     budgetBook: BudgetBookEntity,
     canRemove: Boolean,
+    strings: AccountEditorStrings,
     onSave: (String, String?) -> Unit,
     onArchive: () -> Unit,
     onDeletePermanently: () -> Unit,
@@ -569,7 +760,7 @@ private fun AccountEditorSheet(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(
-                    text = stringResource(R.string.edit_account),
+                    text = strings.editAccount,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -578,11 +769,14 @@ private fun AccountEditorSheet(
                     onTitleChange = { title = it },
                     description = description,
                     onDescriptionChange = { description = it },
-                    titleSupportingText = stringResource(R.string.budget_book_name_helper),
+                    titleSupportingText = strings.budgetBookNameHelper,
+                    titleLabel = strings.budgetBookName,
+                    descriptionLabel = strings.budgetBookDescription,
+                    descriptionSupportingText = strings.budgetBookDescriptionHelper,
                 )
                 if (!canRemove) {
                     Text(
-                        text = stringResource(R.string.account_delete_blocked),
+                        text = strings.accountDeleteBlocked,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -591,6 +785,7 @@ private fun AccountEditorSheet(
             AccountEditorActions(
                 canSave = canSave,
                 canRemove = canRemove,
+                strings = strings,
                 onArchive = { showArchiveConfirmation = true },
                 onDeletePermanently = { showDeleteConfirmation = true },
                 onCancel = onDismiss,
@@ -602,8 +797,8 @@ private fun AccountEditorSheet(
     if (showArchiveConfirmation) {
         AlertDialog(
             onDismissRequest = { showArchiveConfirmation = false },
-            title = { Text(stringResource(R.string.archive_account_title)) },
-            text = { Text(stringResource(R.string.archive_account_message, budgetBook.title)) },
+            title = { Text(strings.archiveAccountTitle) },
+            text = { Text(strings.archiveAccountMessage) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -611,12 +806,12 @@ private fun AccountEditorSheet(
                         onArchive()
                     },
                 ) {
-                    Text(stringResource(R.string.archive))
+                    Text(strings.archive)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showArchiveConfirmation = false }) {
-                    Text(stringResource(R.string.cancel))
+                    Text(strings.cancel)
                 }
             },
         )
@@ -625,8 +820,8 @@ private fun AccountEditorSheet(
     if (showDeleteConfirmation) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmation = false },
-            title = { Text(stringResource(R.string.delete_account_permanently_title)) },
-            text = { Text(stringResource(R.string.delete_account_permanently_message, budgetBook.title)) },
+            title = { Text(strings.deleteAccountPermanentlyTitle) },
+            text = { Text(strings.deleteAccountPermanentlyMessage) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -634,12 +829,12 @@ private fun AccountEditorSheet(
                         onDeletePermanently()
                     },
                 ) {
-                    Text(stringResource(R.string.delete_account_permanently))
+                    Text(strings.deleteAccountPermanently)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmation = false }) {
-                    Text(stringResource(R.string.cancel))
+                    Text(strings.cancel)
                 }
             },
         )
@@ -650,6 +845,7 @@ private fun AccountEditorSheet(
 private fun AccountEditorActions(
     canSave: Boolean,
     canRemove: Boolean,
+    strings: AccountEditorStrings,
     onArchive: () -> Unit,
     onDeletePermanently: () -> Unit,
     onCancel: () -> Unit,
@@ -674,7 +870,7 @@ private fun AccountEditorActions(
                 enabled = canRemove,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(stringResource(R.string.archive))
+                Text(strings.archive)
             }
             OutlinedButton(
                 onClick = onDeletePermanently,
@@ -689,7 +885,7 @@ private fun AccountEditorActions(
                     modifier = Modifier.padding(end = 8.dp),
                 )
                 Text(
-                    text = stringResource(R.string.delete_account_permanently),
+                    text = strings.deleteAccountPermanently,
                     color = MaterialTheme.colorScheme.error,
                 )
             }
@@ -705,14 +901,14 @@ private fun AccountEditorActions(
                 onClick = onCancel,
                 modifier = Modifier.weight(1f),
             ) {
-                Text(stringResource(R.string.cancel))
+                Text(strings.cancel)
             }
             Button(
                 onClick = onSave,
                 enabled = canSave,
                 modifier = Modifier.weight(1f),
             ) {
-                Text(stringResource(R.string.save))
+                Text(strings.save)
             }
         }
     }
