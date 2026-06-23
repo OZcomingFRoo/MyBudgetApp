@@ -25,11 +25,12 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class RecurringTransactionGeneratorTest {
+    private lateinit var context: Context
     private lateinit var database: MyBudgetDatabase
 
     @Before
     fun setUp() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
+        context = ApplicationProvider.getApplicationContext()
         database = Room.inMemoryDatabaseBuilder(context, MyBudgetDatabase::class.java)
             .allowMainThreadQueries()
             .build()
