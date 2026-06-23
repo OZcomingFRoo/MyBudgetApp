@@ -124,6 +124,12 @@ Money should be represented safely using integer minor units. Do not require or 
 
 ## Build And Test Commands
 
+For routine project builds, use the repo-local `build-mybudget` skill under
+`.agents/skills/build-mybudget/`.
+
+For routine unit test runs, use the repo-local `test-mybudget` skill under
+`.agents/skills/test-mybudget/`.
+
 Use these commands on Windows when relevant:
 
 ```powershell
