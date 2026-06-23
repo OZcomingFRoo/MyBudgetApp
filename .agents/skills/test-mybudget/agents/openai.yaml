@@ -1,0 +1,4 @@
+﻿interface:
+  display_name: "Test MyBudget"
+  short_description: "Run MyBudget Android unit tests"
+  default_prompt: "Use $test-mybudget to run the MyBudget Android test suite."

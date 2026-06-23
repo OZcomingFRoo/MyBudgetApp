@@ -1,0 +1,4 @@
+﻿interface:
+  display_name: "Build MyBudget"
+  short_description: "Build the MyBudget Android app"
+  default_prompt: "Use $build-mybudget to build the MyBudget Android app."
