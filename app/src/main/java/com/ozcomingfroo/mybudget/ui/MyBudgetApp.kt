@@ -7,6 +7,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -34,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
@@ -184,17 +195,18 @@ private fun LocalizedApp(
 private enum class AppDestination(
     val route: String,
     val titleRes: Int,
+    val icon: ImageVector,
     val showInDrawer: Boolean = true,
 ) {
-    Dashboard("dashboard", R.string.nav_dashboard),
-    AddTransaction("add_transaction", R.string.nav_add_transaction),
-    History("history", R.string.nav_history),
-    Categories("categories", R.string.nav_categories),
-    Reports("reports", R.string.nav_reports),
-    RecurringTransactions("recurring_transactions", R.string.nav_recurring_transactions),
-    Accounts("accounts", R.string.nav_accounts),
-    CreateAccount("create_account", R.string.create_account, showInDrawer = false),
-    Settings("settings", R.string.nav_settings),
+    Dashboard("dashboard", R.string.nav_dashboard, Icons.Filled.Dashboard),
+    AddTransaction("add_transaction", R.string.nav_add_transaction, Icons.Filled.AddCircle),
+    History("history", R.string.nav_history, Icons.Filled.History),
+    Categories("categories", R.string.nav_categories, Icons.Filled.Category),
+    Reports("reports", R.string.nav_reports, Icons.Filled.BarChart),
+    RecurringTransactions("recurring_transactions", R.string.nav_recurring_transactions, Icons.Filled.Repeat),
+    Accounts("accounts", R.string.nav_accounts, Icons.Filled.Groups),
+    CreateAccount("create_account", R.string.create_account, Icons.Filled.AccountBalance, showInDrawer = false),
+    Settings("settings", R.string.nav_settings, Icons.Filled.Settings),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -258,6 +270,12 @@ private fun MyBudgetAppShell(
                 AppDestination.entries.filter { it.showInDrawer }.forEach { destination ->
                     NavigationDrawerItem(
                         label = { Text(stringResource(destination.titleRes)) },
+                        icon = {
+                            Icon(
+                                imageVector = destination.icon,
+                                contentDescription = null,
+                            )
+                        },
                         selected = currentRoute == destination.route,
                         onClick = {
                             scope.launch { drawerState.close() }
