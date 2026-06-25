@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +56,7 @@ import com.ozcomingfroo.mybudget.core.money.MoneyFormatter
 import com.ozcomingfroo.mybudget.data.local.entity.CategoryEntity
 import com.ozcomingfroo.mybudget.data.local.entity.TransactionEntity
 import com.ozcomingfroo.mybudget.data.local.model.TransactionType
+import com.ozcomingfroo.mybudget.data.repository.TransactionRepository
 import com.ozcomingfroo.mybudget.ui.theme.ExpenseRed
 import com.ozcomingfroo.mybudget.ui.theme.IncomeGreen
 import java.time.Clock
@@ -65,12 +67,13 @@ import java.time.format.TextStyle
 import java.time.temporal.TemporalAdjusters
 import java.time.temporal.WeekFields
 import java.util.Locale
+import kotlinx.coroutines.flow.flowOf
 
 @Composable
 internal fun DashboardScreen(
     selectedBudgetBookId: Long?,
     categories: List<CategoryEntity>,
-    transactions: List<TransactionEntity>,
+    transactionRepository: TransactionRepository,
     clock: Clock,
     updateTransaction: suspend (TransactionEntity) -> Unit,
     snackbarHostState: SnackbarHostState,
@@ -86,28 +89,38 @@ internal fun DashboardScreen(
     val dateRange = remember(rangeType, anchorDate, locale) {
         DashboardDateRange.from(rangeType, anchorDate, locale)
     }
-    val rangeTransactions = remember(transactions, dateRange) {
-        transactions.filter { transaction ->
-            val date = transaction.occurredAt.toLocalDate()
-            !date.isBefore(dateRange.startDate) && date.isBefore(dateRange.endExclusiveDate)
-        }
-    }
-    val income = rangeTransactions.total(TransactionType.INCOME)
-    val expenses = rangeTransactions.total(TransactionType.EXPENSE)
+    val rangeTransactions by remember(selectedBudgetBookId, dateRange) {
+        selectedBudgetBookId?.let { budgetBookId ->
+            transactionRepository.observeForDateRange(
+                budgetBookId = budgetBookId,
+                startDate = dateRange.startDate,
+                endExclusiveDate = dateRange.endExclusiveDate,
+            )
+        } ?: flowOf(emptyList())
+    }.collectAsState(initial = emptyList())
+    val income = remember(rangeTransactions) { rangeTransactions.total(TransactionType.INCOME) }
+    val expenses = remember(rangeTransactions) { rangeTransactions.total(TransactionType.EXPENSE) }
     val remaining = income - expenses
-    val categoryById = categories.associateBy { it.id }
-    val incomeSlices = rangeTransactions.categorySlices(
-        type = TransactionType.INCOME,
-        categoryById = categoryById,
-        uncategorizedLabel = stringResource(R.string.uncategorized),
-        fallbackColor = MaterialTheme.colorScheme.primary,
-    )
-    val expenseSlices = rangeTransactions.categorySlices(
-        type = TransactionType.EXPENSE,
-        categoryById = categoryById,
-        uncategorizedLabel = stringResource(R.string.uncategorized),
-        fallbackColor = MaterialTheme.colorScheme.primary,
-    )
+    val categoryById = remember(categories) { categories.associateBy { it.id } }
+    val uncategorizedLabel = stringResource(R.string.uncategorized)
+    val fallbackColor = MaterialTheme.colorScheme.primary
+    val incomeSlices = remember(rangeTransactions, categoryById, uncategorizedLabel, fallbackColor) {
+        rangeTransactions.categorySlices(
+            type = TransactionType.INCOME,
+            categoryById = categoryById,
+            uncategorizedLabel = uncategorizedLabel,
+            fallbackColor = fallbackColor,
+        )
+    }
+    val expenseSlices = remember(rangeTransactions, categoryById, uncategorizedLabel, fallbackColor) {
+        rangeTransactions.categorySlices(
+            type = TransactionType.EXPENSE,
+            categoryById = categoryById,
+            uncategorizedLabel = uncategorizedLabel,
+            fallbackColor = fallbackColor,
+        )
+    }
+    val recentTransactions = remember(rangeTransactions) { rangeTransactions.take(5) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -196,7 +209,11 @@ internal fun DashboardScreen(
                 )
             }
         } else {
-            items(rangeTransactions.take(5), key = { it.id }) { transaction ->
+            items(
+                items = recentTransactions,
+                key = { it.id },
+                contentType = { "transaction" },
+            ) { transaction ->
                 TransactionRow(
                     transaction = transaction,
                     category = transaction.categoryId?.let(categoryById::get),

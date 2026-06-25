@@ -60,6 +60,7 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -89,13 +90,13 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
 @Composable
 internal fun RecurringTransactionsScreen(
     selectedBudgetBookId: Long?,
     categories: List<CategoryEntity>,
-    recurringTransactions: List<RecurringTransactionEntity>,
     recurringTransactionRepository: RecurringTransactionRepository,
     clock: Clock,
     snackbarHostState: SnackbarHostState,
@@ -113,11 +114,16 @@ internal fun RecurringTransactionsScreen(
     var showEditor by rememberSaveable { mutableStateOf(false) }
     var deletingRule by remember { mutableStateOf<RecurringTransactionEntity?>(null) }
     val scope = rememberCoroutineScope()
-    val categoryById = categories.associateBy { it.id }
+    val recurringTransactions by remember(selectedBudgetBookId, recurringTransactionRepository) {
+        selectedBudgetBookId?.let(recurringTransactionRepository::observeForBudgetBook) ?: flowOf(emptyList())
+    }.collectAsState(initial = emptyList())
+    val categoryById = remember(categories) { categories.associateBy { it.id } }
+    val selectedCategoryIdSet = remember(selectedCategoryIds) { selectedCategoryIds.toSet() }
+    val selectedFrequencySet = remember(selectedFrequencies) { selectedFrequencies.toSet() }
     val activeFilter = RecurringTransactionsFilter(
         type = typeFilter,
-        selectedCategoryIds = selectedCategoryIds.toSet(),
-        selectedFrequencies = selectedFrequencies.toSet(),
+        selectedCategoryIds = selectedCategoryIdSet,
+        selectedFrequencies = selectedFrequencySet,
         status = statusFilter,
         nextRunStartDate = nextRunStartEpochDay?.let(LocalDate::ofEpochDay),
         nextRunEndDate = nextRunEndEpochDay?.let(LocalDate::ofEpochDay),
@@ -202,7 +208,11 @@ internal fun RecurringTransactionsScreen(
                 )
             }
         } else {
-            items(filteredRules, key = { it.id }) { rule ->
+            items(
+                items = filteredRules,
+                key = { it.id },
+                contentType = { "recurring_rule" },
+            ) { rule ->
                 RecurringTransactionRow(
                     rule = rule,
                     category = rule.categoryId?.let(categoryById::get),
@@ -785,7 +795,11 @@ private fun RecurringCategoryFilterSheet(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    gridItems(categories, key = { it.id }) { category ->
+                    gridItems(
+                        items = categories,
+                        key = { it.id },
+                        contentType = { "category" },
+                    ) { category ->
                         val selected = category.id in selectedCategoryIds
                         CategoryGridTile(
                             category = category,
@@ -990,7 +1004,11 @@ internal fun RecurringTransactionEditorSheet(
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
                                 contentPadding = PaddingValues(vertical = 2.dp),
                             ) {
-                                gridItems(availableCategories, key = { it.id }) { category ->
+                                gridItems(
+                                    items = availableCategories,
+                                    key = { it.id },
+                                    contentType = { "category" },
+                                ) { category ->
                                     CategoryGridTile(
                                         category = category,
                                         onClick = { selectedCategoryId = category.id },

@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -59,6 +60,7 @@ import com.ozcomingfroo.mybudget.core.money.MoneyFormatter
 import com.ozcomingfroo.mybudget.data.local.entity.CategoryEntity
 import com.ozcomingfroo.mybudget.data.local.entity.TransactionEntity
 import com.ozcomingfroo.mybudget.data.local.model.TransactionType
+import com.ozcomingfroo.mybudget.data.repository.TransactionRepository
 import com.ozcomingfroo.mybudget.ui.theme.ExpenseRed
 import com.ozcomingfroo.mybudget.ui.theme.IncomeGreen
 import java.time.Clock
@@ -72,11 +74,13 @@ import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.time.temporal.WeekFields
 import java.util.Locale
+import kotlinx.coroutines.flow.flowOf
 
 @Composable
 internal fun ReportsScreen(
+    selectedBudgetBookId: Long?,
     categories: List<CategoryEntity>,
-    transactions: List<TransactionEntity>,
+    transactionRepository: TransactionRepository,
     clock: Clock,
     onAddTransaction: () -> Unit,
 ) {
@@ -100,16 +104,21 @@ internal fun ReportsScreen(
             ReportsDateRange.from(rangeType, anchorDate, locale)
         }
     }
-    val rangeTransactions = remember(transactions, dateRange) {
-        dateRange?.let { range ->
-            transactions.filter { transaction ->
-                val date = transaction.occurredAt.toLocalDate()
-                !date.isBefore(range.startDate) && date.isBefore(range.endExclusiveDate)
-            }
-        }.orEmpty()
-    }
+    val rangeTransactions by remember(selectedBudgetBookId, dateRange) {
+        val range = dateRange
+        if (selectedBudgetBookId != null && range != null) {
+            transactionRepository.observeForDateRange(
+                budgetBookId = selectedBudgetBookId,
+                startDate = range.startDate,
+                endExclusiveDate = range.endExclusiveDate,
+            )
+        } else {
+            flowOf(emptyList())
+        }
+    }.collectAsState(initial = emptyList())
     val categoryById = remember(categories) { categories.associateBy { it.id } }
     val uncategorizedLabel = stringResource(R.string.uncategorized)
+    val otherCategoryLabel = stringResource(R.string.other_category)
     val buckets = remember(rangeTransactions, dateRange, rangeType, locale) {
         dateRange?.buildTrendBuckets(rangeTransactions, rangeType, locale).orEmpty()
     }
@@ -120,8 +129,11 @@ internal fun ReportsScreen(
             fallbackColor = Color.Gray,
         )
     }
-    val totalIncome = rangeTransactions.total(TransactionType.INCOME)
-    val totalExpenses = rangeTransactions.total(TransactionType.EXPENSE)
+    val groupedCategoryTotals = remember(categoryTotals, otherCategoryLabel) {
+        categoryTotals.groupSmallCategories(otherLabel = otherCategoryLabel)
+    }
+    val totalIncome = remember(rangeTransactions) { rangeTransactions.total(TransactionType.INCOME) }
+    val totalExpenses = remember(rangeTransactions) { rangeTransactions.total(TransactionType.EXPENSE) }
     val hasReportData = rangeTransactions.isNotEmpty()
 
     LazyColumn(
@@ -187,9 +199,7 @@ internal fun ReportsScreen(
             item {
                 ChartSection(title = stringResource(R.string.spending_breakdown)) {
                     SpendingBreakdownChart(
-                        categories = categoryTotals.groupSmallCategories(
-                            otherLabel = stringResource(R.string.other_category),
-                        ),
+                        categories = groupedCategoryTotals,
                         totalExpenses = totalExpenses,
                     )
                 }
@@ -634,14 +644,14 @@ private fun ChartLegend(items: List<LegendItem>) {
     }
 }
 
-private enum class ReportsRangeType {
+internal enum class ReportsRangeType {
     Week,
     Month,
     Year,
     Custom,
 }
 
-private data class ReportsDateRange(
+internal data class ReportsDateRange(
     val startDate: LocalDate,
     val endExclusiveDate: LocalDate,
 ) {
@@ -676,7 +686,7 @@ private data class ReportsDateRange(
     }
 }
 
-private data class TrendBucket(
+internal data class TrendBucket(
     val label: String,
     val incomeMinor: Long,
     val expenseMinor: Long,
@@ -722,7 +732,7 @@ private fun ReportsDateRange.label(type: ReportsRangeType, locale: Locale): Stri
         ReportsRangeType.Custom -> "${startDate} - ${endExclusiveDate.minusDays(1)}"
     }
 
-private fun ReportsDateRange.buildTrendBuckets(
+internal fun ReportsDateRange.buildTrendBuckets(
     transactions: List<TransactionEntity>,
     type: ReportsRangeType,
     locale: Locale,
@@ -733,18 +743,33 @@ private fun ReportsDateRange.buildTrendBuckets(
         ReportsRangeType.Year -> monthlyRanges()
         ReportsRangeType.Custom -> customRanges(locale)
     }
-    return ranges.map { bucketRange ->
-        val bucketTransactions = transactions.filter { transaction ->
-            val date = transaction.occurredAt.toLocalDate()
-            !date.isBefore(bucketRange.startDate) && date.isBefore(bucketRange.endExclusiveDate)
+    val totals = ranges.map { MutableTrendTotals() }
+    transactions.forEach { transaction ->
+        val date = transaction.occurredAt.toLocalDate()
+        val bucketIndex = ranges.indexOfFirst { range ->
+            !date.isBefore(range.startDate) && date.isBefore(range.endExclusiveDate)
         }
+        if (bucketIndex != -1) {
+            when (transaction.type) {
+                TransactionType.INCOME -> totals[bucketIndex].incomeMinor += transaction.amountMinor
+                TransactionType.EXPENSE -> totals[bucketIndex].expenseMinor += transaction.amountMinor
+            }
+        }
+    }
+    return ranges.mapIndexed { index, bucketRange ->
+        val total = totals[index]
         TrendBucket(
             label = bucketRange.shortLabel(type, locale),
-            incomeMinor = bucketTransactions.total(TransactionType.INCOME),
-            expenseMinor = bucketTransactions.total(TransactionType.EXPENSE),
+            incomeMinor = total.incomeMinor,
+            expenseMinor = total.expenseMinor,
         )
     }
 }
+
+private data class MutableTrendTotals(
+    var incomeMinor: Long = 0,
+    var expenseMinor: Long = 0,
+)
 
 private fun ReportsDateRange.dailyRanges(): List<ReportsDateRange> =
     generateSequence(startDate) { it.plusDays(1) }

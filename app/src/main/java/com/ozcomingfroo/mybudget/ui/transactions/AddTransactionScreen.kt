@@ -190,17 +190,22 @@ internal fun AddTransactionScreen(
             },
         )
     }
-    val availableCategories = categories.filter { category ->
-        when (transactionType) {
-            TransactionType.EXPENSE -> category.type == CategoryType.EXPENSE || category.type == CategoryType.BOTH
-            TransactionType.INCOME -> category.type == CategoryType.INCOME || category.type == CategoryType.BOTH
+    val availableCategories = remember(categories, transactionType) {
+        categories.filter { category ->
+            when (transactionType) {
+                TransactionType.EXPENSE -> category.type == CategoryType.EXPENSE || category.type == CategoryType.BOTH
+                TransactionType.INCOME -> category.type == CategoryType.INCOME || category.type == CategoryType.BOTH
+            }
         }
+    }
+    val availableCategoryIds = remember(availableCategories) {
+        availableCategories.map { it.id }.toSet()
     }
     var selectedCategoryId by rememberSaveable(transactionType) {
         mutableStateOf(availableCategories.firstOrNull()?.id)
     }
-    LaunchedEffect(availableCategories) {
-        if (selectedCategoryId !in availableCategories.map { it.id }) {
+    LaunchedEffect(availableCategoryIds) {
+        if (selectedCategoryId !in availableCategoryIds) {
             selectedCategoryId = availableCategories.firstOrNull()?.id
         }
     }
@@ -330,7 +335,11 @@ internal fun AddTransactionScreen(
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                             contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 2.dp),
                         ) {
-                            gridItems(availableCategories, key = { it.id }) { category ->
+                            gridItems(
+                                items = availableCategories,
+                                key = { it.id },
+                                contentType = { "category" },
+                            ) { category ->
                                 CategoryGridTile(
                                     category = category,
                                     onClick = { selectedCategoryId = category.id },
@@ -549,17 +558,22 @@ internal fun EditTransactionSheet(
     snackbarHostState: SnackbarHostState,
 ) {
     var transactionType by rememberSaveable(transaction.id) { mutableStateOf(transaction.type) }
-    val availableCategories = categories.filter { category ->
-        when (transactionType) {
-            TransactionType.EXPENSE -> category.type == CategoryType.EXPENSE || category.type == CategoryType.BOTH
-            TransactionType.INCOME -> category.type == CategoryType.INCOME || category.type == CategoryType.BOTH
+    val availableCategories = remember(categories, transactionType) {
+        categories.filter { category ->
+            when (transactionType) {
+                TransactionType.EXPENSE -> category.type == CategoryType.EXPENSE || category.type == CategoryType.BOTH
+                TransactionType.INCOME -> category.type == CategoryType.INCOME || category.type == CategoryType.BOTH
+            }
         }
+    }
+    val availableCategoryIds = remember(availableCategories) {
+        availableCategories.map { it.id }.toSet()
     }
     var selectedCategoryId by rememberSaveable(transaction.id, transactionType) {
         mutableStateOf(transaction.categoryId ?: availableCategories.firstOrNull()?.id)
     }
-    LaunchedEffect(availableCategories) {
-        if (selectedCategoryId !in availableCategories.map { it.id }) {
+    LaunchedEffect(availableCategoryIds) {
+        if (selectedCategoryId !in availableCategoryIds) {
             selectedCategoryId = availableCategories.firstOrNull()?.id
         }
     }
@@ -694,7 +708,11 @@ internal fun EditTransactionSheet(
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
                                 contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 2.dp),
                             ) {
-                                gridItems(availableCategories, key = { it.id }) { category ->
+                                gridItems(
+                                    items = availableCategories,
+                                    key = { it.id },
+                                    contentType = { "category" },
+                                ) { category ->
                                     CategoryGridTile(
                                         category = category,
                                         onClick = { selectedCategoryId = category.id },

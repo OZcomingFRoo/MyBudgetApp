@@ -51,9 +51,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         launchDestination = intent.toLaunchDestination()
         enableEdgeToEdge()
-        lifecycleScope.launch {
-            localDataInitializer.initialize()
-        }
         setContent {
             MyBudgetApp(
                 transactionRepository = transactionRepository,
@@ -65,6 +62,11 @@ class MainActivity : ComponentActivity() {
                 launchDestination = launchDestination,
                 onLaunchDestinationHandled = { launchDestination = null },
             )
+        }
+        window.decorView.post {
+            lifecycleScope.launch {
+                localDataInitializer.initialize()
+            }
         }
     }
 
