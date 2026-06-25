@@ -166,8 +166,8 @@ import kotlinx.coroutines.launch
 
 @Composable
 internal fun HistoryScreen(
+    selectedBudgetBookId: Long?,
     categories: List<CategoryEntity>,
-    transactions: List<TransactionEntity>,
     transactionRepository: TransactionRepository,
     clock: Clock,
     updateTransaction: suspend (TransactionEntity) -> Unit,
@@ -186,16 +186,28 @@ internal fun HistoryScreen(
     var showFiltersSheet by rememberSaveable { mutableStateOf(false) }
     var showCategoryFilterSheet by rememberSaveable { mutableStateOf(false) }
     var editingTransaction by remember { mutableStateOf<TransactionEntity?>(null) }
-    val categoryById = categories.associateBy { it.id }
+    val categoryById = remember(categories) { categories.associateBy { it.id } }
+    val selectedCategoryIdSet = remember(selectedCategoryIds) { selectedCategoryIds.toSet() }
     val activeFilter = HistoryFilter(
         startDate = LocalDate.ofEpochDay(startEpochDay),
         endDate = LocalDate.ofEpochDay(endEpochDay),
         type = typeFilter,
-        selectedCategoryIds = selectedCategoryIds.toSet(),
+        selectedCategoryIds = selectedCategoryIdSet,
     )
-    val filteredTransactions = remember(transactions, activeFilter) {
-        transactions.filterByHistoryFilter(activeFilter)
-    }
+    val filteredTransactions by remember(selectedBudgetBookId, activeFilter) {
+        selectedBudgetBookId?.let { budgetBookId ->
+            transactionRepository.observeForHistoryFilter(
+                budgetBookId = budgetBookId,
+                startDate = activeFilter.startDate,
+                endDate = activeFilter.endDate,
+                type = activeFilter.type.toTransactionTypeOrNull(),
+                categoryIds = activeFilter.selectedCategoryIds,
+            )
+        } ?: flowOf(emptyList())
+    }.collectAsState(initial = emptyList())
+    val hasTransactions by remember(selectedBudgetBookId) {
+        selectedBudgetBookId?.let(transactionRepository::observeHasTransactions) ?: flowOf(false)
+    }.collectAsState(initial = false)
     val scope = rememberCoroutineScope()
     val deletedMessage = stringResource(R.string.transaction_deleted)
     val undoLabel = stringResource(R.string.undo)
@@ -242,7 +254,7 @@ internal fun HistoryScreen(
                 categoryById = categoryById,
             )
         }
-        if (transactions.isEmpty()) {
+        if (filteredTransactions.isEmpty() && !hasTransactions) {
             item {
                 EmptyState(
                     text = stringResource(R.string.no_transactions_yet),
@@ -264,7 +276,11 @@ internal fun HistoryScreen(
                 )
             }
         } else {
-            items(filteredTransactions, key = { it.id }) { transaction ->
+            items(
+                items = filteredTransactions,
+                key = { it.id },
+                contentType = { "transaction" },
+            ) { transaction ->
                 TransactionRow(
                     transaction = transaction,
                     category = transaction.categoryId?.let(categoryById::get),
@@ -648,7 +664,11 @@ private fun HistoryCategoryFilterSheet(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    gridItems(categories, key = { it.id }) { category ->
+                    gridItems(
+                        items = categories,
+                        key = { it.id },
+                        contentType = { "category" },
+                    ) { category ->
                         val selected = category.id in selectedCategoryIds
                         CategoryGridTile(
                             category = category,
@@ -743,6 +763,13 @@ private fun List<CategoryEntity>.availableForHistoryFilter(type: HistoryTransact
             HistoryTransactionTypeFilter.Both -> true
         }
     }.sortedWith(compareBy<CategoryEntity> { it.sortOrder }.thenBy { it.title })
+
+private fun HistoryTransactionTypeFilter.toTransactionTypeOrNull(): TransactionType? =
+    when (this) {
+        HistoryTransactionTypeFilter.Expense -> TransactionType.EXPENSE
+        HistoryTransactionTypeFilter.Income -> TransactionType.INCOME
+        HistoryTransactionTypeFilter.Both -> null
+    }
 
 private fun LocalDate.toPickerMillis(): Long =
     atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()

@@ -38,6 +38,37 @@ interface TransactionDao {
         endExclusiveDateTime: LocalDateTime,
     ): Flow<List<TransactionEntity>>
 
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE budget_book_id = :budgetBookId
+        AND occurred_date >= :startDateTime
+        AND occurred_date < :endExclusiveDateTime
+        AND (:type IS NULL OR type = :type)
+        AND (:filterByCategory = 0 OR category_id IN (:categoryIds))
+        ORDER BY occurred_date DESC, id DESC
+        """,
+    )
+    fun observeForHistoryFilter(
+        budgetBookId: Long,
+        startDateTime: LocalDateTime,
+        endExclusiveDateTime: LocalDateTime,
+        type: TransactionType?,
+        filterByCategory: Boolean,
+        categoryIds: List<Long>,
+    ): Flow<List<TransactionEntity>>
+
+    @Query(
+        """
+        SELECT EXISTS(
+            SELECT 1 FROM transactions
+            WHERE budget_book_id = :budgetBookId
+            LIMIT 1
+        )
+        """,
+    )
+    fun observeHasTransactions(budgetBookId: Long): Flow<Boolean>
+
     @Query("SELECT * FROM transactions WHERE id = :id")
     suspend fun getById(id: Long): TransactionEntity?
 

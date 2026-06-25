@@ -37,6 +37,7 @@ import java.time.LocalDateTime
         Index(value = ["type"]),
         Index(value = ["category_id"]),
         Index(value = ["recurring_transaction_id"]),
+        Index(value = ["budget_book_id", "occurred_date", "id"]),
         Index(value = ["budget_book_id", "type", "occurred_date"]),
         Index(value = ["budget_book_id", "category_id", "occurred_date"]),
     ],

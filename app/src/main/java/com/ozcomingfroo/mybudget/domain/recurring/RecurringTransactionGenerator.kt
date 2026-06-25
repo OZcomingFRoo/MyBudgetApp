@@ -23,11 +23,24 @@ class RecurringTransactionGenerator @Inject constructor(
     private val clock: Clock,
 ) {
     suspend fun generateDue(today: LocalDate = LocalDate.now(clock)): Int {
-        val dueRules = recurringTransactionDao.getDue(today)
-        if (dueRules.isEmpty()) return 0
-
         val generatedCount = database.withTransaction {
-            dueRules.sumOf { rule -> generateDueForRule(rule, today) }
+            val dueRules = recurringTransactionDao.getDue(today)
+            if (dueRules.isEmpty()) {
+                return@withTransaction 0
+            }
+
+            val generatedRules = dueRules.mapNotNull { rule -> generateDueForRule(rule, today) }
+            val generatedTransactions = generatedRules.flatMap { it.transactions }
+            if (generatedTransactions.isEmpty()) {
+                return@withTransaction 0
+            }
+
+            transactionDao.insertAll(generatedTransactions)
+            transactionRepository.addCachedTotalsForInsertedTransactions(generatedTransactions)
+            generatedRules.forEach { generatedRule ->
+                recurringTransactionDao.update(generatedRule.updatedRule)
+            }
+            generatedTransactions.size
         }
         if (generatedCount > 0) {
             widgetUpdateNotifier.notifyWidgetsChanged()
@@ -38,7 +51,7 @@ class RecurringTransactionGenerator @Inject constructor(
     private suspend fun generateDueForRule(
         rule: RecurringTransactionEntity,
         today: LocalDate,
-    ): Int {
+    ): GeneratedRecurringRule? {
         require(rule.interval >= 1) { "Recurring transaction interval must be at least 1." }
 
         val generatedTransactions = mutableListOf<TransactionEntity>()
@@ -65,18 +78,22 @@ class RecurringTransactionGenerator @Inject constructor(
             dueDate = nextRunDate
         }
 
-        if (generatedTransactions.isNotEmpty()) {
-            transactionDao.insertAll(generatedTransactions)
-            transactionRepository.addCachedTotalsForInsertedTransactions(generatedTransactions)
-            recurringTransactionDao.update(
-                rule.copy(
-                    lastRunDate = lastGeneratedDate,
-                    nextRunDate = nextRunDate,
-                    updatedAt = clock.instant(),
-                ),
-            )
+        if (generatedTransactions.isEmpty()) {
+            return null
         }
 
-        return generatedTransactions.size
+        return GeneratedRecurringRule(
+            transactions = generatedTransactions,
+            updatedRule = rule.copy(
+                lastRunDate = lastGeneratedDate,
+                nextRunDate = nextRunDate,
+                updatedAt = clock.instant(),
+            ),
+        )
     }
+
+    private data class GeneratedRecurringRule(
+        val transactions: List<TransactionEntity>,
+        val updatedRule: RecurringTransactionEntity,
+    )
 }

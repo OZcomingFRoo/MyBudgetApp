@@ -56,8 +56,6 @@ import androidx.navigation.compose.rememberNavController
 import com.ozcomingfroo.mybudget.R
 import com.ozcomingfroo.mybudget.data.local.entity.BudgetBookEntity
 import com.ozcomingfroo.mybudget.data.local.entity.CategoryEntity
-import com.ozcomingfroo.mybudget.data.local.entity.RecurringTransactionEntity
-import com.ozcomingfroo.mybudget.data.local.entity.TransactionEntity
 import com.ozcomingfroo.mybudget.data.preferences.AppLanguageMode
 import com.ozcomingfroo.mybudget.data.preferences.AppPreferences
 import com.ozcomingfroo.mybudget.data.preferences.AppPreferencesRepository
@@ -111,18 +109,9 @@ fun MyBudgetApp(
             val budgetBooks by remember {
                 budgetBookRepository.observeActiveBudgetBooks()
             }.collectAsState(initial = emptyList())
-            val archivedBudgetBooks by remember {
-                budgetBookRepository.observeArchivedBudgetBooks()
-            }.collectAsState(initial = emptyList())
             val currentBudgetBook = budgetBooks.firstOrNull { it.id == selectedBudgetBookId }
             val categories by remember(selectedBudgetBookId) {
                 selectedBudgetBookId?.let(categoryRepository::observeActiveForBudgetBook) ?: flowOf(emptyList())
-            }.collectAsState(initial = emptyList())
-            val transactions by remember(selectedBudgetBookId) {
-                selectedBudgetBookId?.let(transactionRepository::observeForBudgetBook) ?: flowOf(emptyList())
-            }.collectAsState(initial = emptyList())
-            val recurringTransactions by remember(selectedBudgetBookId) {
-                selectedBudgetBookId?.let(recurringTransactionRepository::observeForBudgetBook) ?: flowOf(emptyList())
             }.collectAsState(initial = emptyList())
 
             if (loadedPreferences.hasCompletedOnboarding) {
@@ -131,10 +120,7 @@ fun MyBudgetApp(
                     selectedBudgetBookId = selectedBudgetBookId,
                     currentBudgetBook = currentBudgetBook,
                     budgetBooks = budgetBooks,
-                    archivedBudgetBooks = archivedBudgetBooks,
                     categories = categories,
-                    transactions = transactions,
-                    recurringTransactions = recurringTransactions,
                     categoryRepository = categoryRepository,
                     transactionRepository = transactionRepository,
                     recurringTransactionRepository = recurringTransactionRepository,
@@ -216,10 +202,7 @@ private fun MyBudgetAppShell(
     selectedBudgetBookId: Long?,
     currentBudgetBook: BudgetBookEntity?,
     budgetBooks: List<BudgetBookEntity>,
-    archivedBudgetBooks: List<BudgetBookEntity>,
     categories: List<CategoryEntity>,
-    transactions: List<TransactionEntity>,
-    recurringTransactions: List<RecurringTransactionEntity>,
     categoryRepository: CategoryRepository,
     transactionRepository: TransactionRepository,
     recurringTransactionRepository: RecurringTransactionRepository,
@@ -339,7 +322,7 @@ private fun MyBudgetAppShell(
                     DashboardScreen(
                         selectedBudgetBookId = selectedBudgetBookId,
                         categories = categories,
-                        transactions = transactions,
+                        transactionRepository = transactionRepository,
                         clock = clock,
                         updateTransaction = transactionRepository::update,
                         snackbarHostState = snackbarHostState,
@@ -366,8 +349,8 @@ private fun MyBudgetAppShell(
                 }
                 composable(AppDestination.History.route) {
                     HistoryScreen(
+                        selectedBudgetBookId = selectedBudgetBookId,
                         categories = categories,
-                        transactions = transactions,
                         transactionRepository = transactionRepository,
                         clock = clock,
                         updateTransaction = transactionRepository::update,
@@ -385,8 +368,9 @@ private fun MyBudgetAppShell(
                 }
                 composable(AppDestination.Reports.route) {
                     ReportsScreen(
+                        selectedBudgetBookId = selectedBudgetBookId,
                         categories = categories,
-                        transactions = transactions,
+                        transactionRepository = transactionRepository,
                         clock = clock,
                         onAddTransaction = { navController.navigate(AppDestination.AddTransaction.route) },
                     )
@@ -395,7 +379,6 @@ private fun MyBudgetAppShell(
                     RecurringTransactionsScreen(
                         selectedBudgetBookId = selectedBudgetBookId,
                         categories = categories,
-                        recurringTransactions = recurringTransactions,
                         recurringTransactionRepository = recurringTransactionRepository,
                         clock = clock,
                         snackbarHostState = snackbarHostState,
@@ -404,7 +387,6 @@ private fun MyBudgetAppShell(
                 composable(AppDestination.Accounts.route) {
                     AccountsScreen(
                         budgetBooks = budgetBooks,
-                        archivedBudgetBooks = archivedBudgetBooks,
                         selectedBudgetBookId = selectedBudgetBookId,
                         languageMode = preferences.languageMode,
                         appPreferencesRepository = appPreferencesRepository,

@@ -30,6 +30,7 @@ import java.time.LocalDate
         Index(value = ["budget_book_id"]),
         Index(value = ["category_id"]),
         Index(value = ["budget_book_id", "is_active", "next_run_date"]),
+        Index(value = ["is_active", "next_run_date", "id"]),
     ],
 )
 data class RecurringTransactionEntity(

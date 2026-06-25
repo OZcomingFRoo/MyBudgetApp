@@ -463,34 +463,29 @@ internal fun CategoryIconCircle(
     }
 }
 
-private data class CategoryIconOption(
-    val iconName: String,
-    val imageVector: ImageVector,
-)
-
 private val TransactionTimeFormatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
 
-private val CategoryIconOptions = listOf(
-    CategoryIconOption("shopping_cart", Icons.Filled.ShoppingCart),
-    CategoryIconOption("restaurant", Icons.Filled.Restaurant),
-    CategoryIconOption("home", Icons.Filled.Home),
-    CategoryIconOption("receipt", Icons.Filled.Receipt),
-    CategoryIconOption("phone_android", Icons.Filled.PhoneAndroid),
-    CategoryIconOption("directions_car", Icons.Filled.DirectionsCar),
-    CategoryIconOption("medical_services", Icons.Filled.LocalHospital),
-    CategoryIconOption("shopping_bag", Icons.Filled.ShoppingBag),
-    CategoryIconOption("movie", Icons.Filled.Movie),
-    CategoryIconOption("payments", Icons.Filled.Payments),
-    CategoryIconOption("work", Icons.Filled.Work),
-    CategoryIconOption("attach_money", Icons.Filled.AttachMoney),
-    CategoryIconOption("undo", Icons.AutoMirrored.Filled.Undo),
-    CategoryIconOption("card_giftcard", Icons.Filled.CardGiftcard),
-    CategoryIconOption("sports", Icons.Filled.SportsSoccer),
-    CategoryIconOption("education", Icons.Filled.School),
-    CategoryIconOption("tech", Icons.Filled.SportsEsports),
-    CategoryIconOption("category", Icons.Filled.Category),
-    CategoryIconOption("other", Icons.AutoMirrored.Filled.Help),
+private val CategoryIconsByName = mapOf(
+    "shopping_cart" to Icons.Filled.ShoppingCart,
+    "restaurant" to Icons.Filled.Restaurant,
+    "home" to Icons.Filled.Home,
+    "receipt" to Icons.Filled.Receipt,
+    "phone_android" to Icons.Filled.PhoneAndroid,
+    "directions_car" to Icons.Filled.DirectionsCar,
+    "medical_services" to Icons.Filled.LocalHospital,
+    "shopping_bag" to Icons.Filled.ShoppingBag,
+    "movie" to Icons.Filled.Movie,
+    "payments" to Icons.Filled.Payments,
+    "work" to Icons.Filled.Work,
+    "attach_money" to Icons.Filled.AttachMoney,
+    "undo" to Icons.AutoMirrored.Filled.Undo,
+    "card_giftcard" to Icons.Filled.CardGiftcard,
+    "sports" to Icons.Filled.SportsSoccer,
+    "education" to Icons.Filled.School,
+    "tech" to Icons.Filled.SportsEsports,
+    "category" to Icons.Filled.Category,
+    "other" to Icons.AutoMirrored.Filled.Help,
 )
 
 private fun String.toCategoryIcon(): ImageVector =
-    CategoryIconOptions.firstOrNull { it.iconName == this }?.imageVector ?: Icons.Filled.Category
+    CategoryIconsByName[this] ?: Icons.Filled.Category

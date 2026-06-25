@@ -191,7 +191,11 @@ internal fun CategoriesScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            gridItems(visibleCategories, key = { it.id }) { category ->
+            gridItems(
+                items = visibleCategories,
+                key = { it.id },
+                contentType = { "category" },
+            ) { category ->
                 CategoryGridTile(
                     category = category,
                     onClick = {

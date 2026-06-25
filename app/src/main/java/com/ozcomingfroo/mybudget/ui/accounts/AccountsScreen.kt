@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +16,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -46,6 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -79,7 +83,6 @@ private val HebrewLocale = Locale("iw")
 @Composable
 internal fun AccountsScreen(
     budgetBooks: List<BudgetBookEntity>,
-    archivedBudgetBooks: List<BudgetBookEntity>,
     selectedBudgetBookId: Long?,
     languageMode: AppLanguageMode,
     appPreferencesRepository: AppPreferencesRepository,
@@ -94,6 +97,9 @@ internal fun AccountsScreen(
     var restoringBudgetBook by remember { mutableStateOf<BudgetBookEntity?>(null) }
     var deletingArchivedBudgetBook by remember { mutableStateOf<BudgetBookEntity?>(null) }
     var selectedAccountView by rememberSaveable { mutableStateOf(AccountListView.Active) }
+    val archivedBudgetBooks by remember(budgetBookRepository) {
+        budgetBookRepository.observeArchivedBudgetBooks()
+    }.collectAsState(initial = emptyList())
     val accountSwitchedMessage = accountResourceContext.getString(R.string.account_switched)
     val accountUpdatedMessage = accountResourceContext.getString(R.string.account_updated)
     val accountArchivedMessage = accountResourceContext.getString(R.string.account_archived)
@@ -101,34 +107,43 @@ internal fun AccountsScreen(
     val accountRestoredMessage = accountResourceContext.getString(R.string.account_restored)
     val blockedMessage = accountResourceContext.getString(R.string.account_delete_blocked)
 
-    Column(
+    LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+            .fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Button(
-            onClick = onCreateAccount,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Add,
-                contentDescription = null,
-                modifier = Modifier.padding(end = 8.dp),
-            )
-            Text(stringResource(R.string.create_account))
+        item(contentType = "action") {
+            Button(
+                onClick = onCreateAccount,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 8.dp),
+                )
+                Text(stringResource(R.string.create_account))
+            }
         }
-        AccountViewSelector(
-            selectedView = selectedAccountView,
-            onViewSelected = { selectedAccountView = it },
-        )
+        item(contentType = "selector") {
+            AccountViewSelector(
+                selectedView = selectedAccountView,
+                onViewSelected = { selectedAccountView = it },
+            )
+        }
         when (selectedAccountView) {
             AccountListView.Active -> {
                 if (budgetBooks.isEmpty()) {
-                    AccountEmptyState(text = stringResource(R.string.no_accounts_yet))
+                    item(contentType = "empty") {
+                        AccountEmptyState(text = stringResource(R.string.no_accounts_yet))
+                    }
                 } else {
-                    budgetBooks.forEach { budgetBook ->
+                    items(
+                        items = budgetBooks,
+                        key = { it.id },
+                        contentType = { "active_account" },
+                    ) { budgetBook ->
                         ActiveAccountRow(
                             budgetBook = budgetBook,
                             isSelected = budgetBook.id == selectedBudgetBookId,
@@ -146,9 +161,15 @@ internal fun AccountsScreen(
 
             AccountListView.Archived -> {
                 if (archivedBudgetBooks.isEmpty()) {
-                    AccountEmptyState(text = stringResource(R.string.no_archived_accounts_yet))
+                    item(contentType = "empty") {
+                        AccountEmptyState(text = stringResource(R.string.no_archived_accounts_yet))
+                    }
                 } else {
-                    archivedBudgetBooks.forEach { budgetBook ->
+                    items(
+                        items = archivedBudgetBooks,
+                        key = { it.id },
+                        contentType = { "archived_account" },
+                    ) { budgetBook ->
                         ArchivedAccountRow(
                             budgetBook = budgetBook,
                             onRestore = { restoringBudgetBook = budgetBook },

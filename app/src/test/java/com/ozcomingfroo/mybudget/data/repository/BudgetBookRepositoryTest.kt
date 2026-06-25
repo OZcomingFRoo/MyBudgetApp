@@ -217,6 +217,33 @@ class BudgetBookRepositoryTest {
     }
 
     @Test
+    fun getWidgetCandidate_prefersSelectedActiveThenFirstActiveThenFirstBook() = runBlocking {
+        val now = Instant.parse("2026-01-01T00:00:00Z")
+        val archivedBookId = database.budgetBookDao().insert(
+            BudgetBookEntity(
+                title = "Archived",
+                archivedAt = now,
+                createdAt = now,
+                updatedAt = now,
+            ),
+        )
+        val zBookId = database.budgetBookDao().insert(
+            BudgetBookEntity(title = "Z Personal", createdAt = now, updatedAt = now),
+        )
+        val aBookId = database.budgetBookDao().insert(
+            BudgetBookEntity(title = "A Household", createdAt = now, updatedAt = now),
+        )
+
+        assertEquals(zBookId, database.budgetBookDao().getWidgetCandidate(zBookId)?.id)
+        assertEquals(aBookId, database.budgetBookDao().getWidgetCandidate(archivedBookId)?.id)
+
+        database.budgetBookDao().archive(zBookId, archivedAt = now, updatedAt = now)
+        database.budgetBookDao().archive(aBookId, archivedAt = now, updatedAt = now)
+
+        assertEquals(archivedBookId, database.budgetBookDao().getWidgetCandidate(zBookId)?.id)
+    }
+
+    @Test
     fun deleteBudgetBookPermanently_deletesNonCurrentBudgetBookAndAssociatedData() = runBlocking {
         val currentBudgetBookId = repository.createBudgetBook("Personal")
         val deletedBudgetBookId = repository.createBudgetBook("Work", selectAfterCreate = false)

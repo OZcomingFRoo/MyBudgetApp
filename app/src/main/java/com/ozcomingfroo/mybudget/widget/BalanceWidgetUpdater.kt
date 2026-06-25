@@ -23,7 +23,7 @@ import javax.inject.Singleton
 
 @Singleton
 class BalanceWidgetUpdater @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val budgetBookDao: BudgetBookDao,
     private val appPreferencesRepository: AppPreferencesRepository,
 ) {
@@ -31,11 +31,7 @@ class BalanceWidgetUpdater @Inject constructor(
         val preferences = appPreferencesRepository.getPreferences()
         val localizedContext = context.localizedFor(preferences.languageMode)
         val widgetTheme = context.widgetThemeFor(preferences.themeMode)
-        val budgetBook = preferences.selectedBudgetBookId
-            ?.let { budgetBookDao.getById(it) }
-            ?.takeIf { it.archivedAt == null }
-            ?: budgetBookDao.getFirstActive()
-            ?: budgetBookDao.getFirst()
+        val budgetBook = budgetBookDao.getWidgetCandidate(preferences.selectedBudgetBookId)
         val views = createViews(localizedContext, budgetBook, widgetTheme)
 
         appWidgetIds.forEach { appWidgetId ->
