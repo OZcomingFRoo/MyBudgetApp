@@ -10,7 +10,7 @@ import javax.inject.Singleton
 
 @Singleton
 class BalanceWidgetUpdateNotifier @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
 ) {
     fun notifyWidgetsChanged() {
         val appWidgetManager = AppWidgetManager.getInstance(context)

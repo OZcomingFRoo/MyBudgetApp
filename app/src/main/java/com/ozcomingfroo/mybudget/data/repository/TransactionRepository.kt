@@ -26,6 +26,36 @@ class TransactionRepository @Inject constructor(
     fun observeForBudgetBook(budgetBookId: Long): Flow<List<TransactionEntity>> =
         transactionDao.observeForBudgetBook(budgetBookId)
 
+    fun observeForDateRange(
+        budgetBookId: Long,
+        startDate: LocalDate,
+        endExclusiveDate: LocalDate,
+    ): Flow<List<TransactionEntity>> =
+        transactionDao.observeForDateRange(
+            budgetBookId = budgetBookId,
+            startDateTime = startDate.atStartOfDay(),
+            endExclusiveDateTime = endExclusiveDate.atStartOfDay(),
+        )
+
+    fun observeForHistoryFilter(
+        budgetBookId: Long,
+        startDate: LocalDate,
+        endDate: LocalDate,
+        type: TransactionType?,
+        categoryIds: Set<Long>,
+    ): Flow<List<TransactionEntity>> =
+        transactionDao.observeForHistoryFilter(
+            budgetBookId = budgetBookId,
+            startDateTime = startDate.atStartOfDay(),
+            endExclusiveDateTime = endDate.plusDays(1).atStartOfDay(),
+            type = type,
+            filterByCategory = categoryIds.isNotEmpty(),
+            categoryIds = categoryIds.toList(),
+        )
+
+    fun observeHasTransactions(budgetBookId: Long): Flow<Boolean> =
+        transactionDao.observeHasTransactions(budgetBookId)
+
     suspend fun insert(transaction: TransactionEntity): Long {
         val id = database.withTransaction {
             val insertedId = transactionDao.insert(transaction)

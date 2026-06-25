@@ -47,20 +47,7 @@ class RecurringTransactionGeneratorTest {
             Instant.parse("2026-04-30T08:00:00Z"),
             ZoneId.of("UTC"),
         )
-        val generator = RecurringTransactionGenerator(
-            database = database,
-            recurringTransactionDao = database.recurringTransactionDao(),
-            transactionDao = database.transactionDao(),
-            transactionRepository = TransactionRepository(
-                database = database,
-                transactionDao = database.transactionDao(),
-                budgetBookDao = database.budgetBookDao(),
-                clock = clock,
-                widgetUpdateNotifier = BalanceWidgetUpdateNotifier(context),
-            ),
-            widgetUpdateNotifier = BalanceWidgetUpdateNotifier(context),
-            clock = clock,
-        )
+        val generator = generator(clock)
         val now = clock.instant()
         val budgetBookId = database.budgetBookDao().insert(
             BudgetBookEntity(title = "Personal", createdAt = now, updatedAt = now),
@@ -100,4 +87,71 @@ class RecurringTransactionGeneratorTest {
         assertEquals(LocalDate.of(2026, 5, 31), updatedRule?.nextRunDate)
         assertEquals(1_800_000L, database.budgetBookDao().getById(budgetBookId)?.totalExpenseMinor)
     }
+
+    @Test
+    fun generateDue_batchesMultipleDueRulesAndUpdatesTotalsByBudgetBook() = runBlocking {
+        val clock = Clock.fixed(
+            Instant.parse("2026-04-30T08:00:00Z"),
+            ZoneId.of("UTC"),
+        )
+        val generator = generator(clock)
+        val now = clock.instant()
+        val personalBudgetBookId = database.budgetBookDao().insert(
+            BudgetBookEntity(title = "Personal", createdAt = now, updatedAt = now),
+        )
+        val workBudgetBookId = database.budgetBookDao().insert(
+            BudgetBookEntity(title = "Work", createdAt = now, updatedAt = now),
+        )
+        database.recurringTransactionDao().insert(
+            RecurringTransactionEntity(
+                budgetBookId = personalBudgetBookId,
+                type = TransactionType.EXPENSE,
+                amountMinor = 1000,
+                title = "Coffee",
+                frequency = RecurringFrequency.DAILY,
+                interval = 1,
+                startDate = LocalDate.of(2026, 4, 28),
+                nextRunDate = LocalDate.of(2026, 4, 28),
+                createdAt = now,
+                updatedAt = now,
+            ),
+        )
+        database.recurringTransactionDao().insert(
+            RecurringTransactionEntity(
+                budgetBookId = workBudgetBookId,
+                type = TransactionType.INCOME,
+                amountMinor = 25_000,
+                title = "Retainer",
+                frequency = RecurringFrequency.WEEKLY,
+                interval = 1,
+                startDate = LocalDate.of(2026, 4, 16),
+                nextRunDate = LocalDate.of(2026, 4, 16),
+                createdAt = now,
+                updatedAt = now,
+            ),
+        )
+
+        val generatedCount = generator.generateDue(LocalDate.of(2026, 4, 30))
+
+        assertEquals(6, generatedCount)
+        assertEquals(3, database.transactionDao().getForBudgetBook(personalBudgetBookId).size)
+        assertEquals(3, database.transactionDao().getForBudgetBook(workBudgetBookId).size)
+        assertEquals(3000L, database.budgetBookDao().getById(personalBudgetBookId)?.totalExpenseMinor)
+        assertEquals(75_000L, database.budgetBookDao().getById(workBudgetBookId)?.totalIncomeMinor)
+    }
+
+    private fun generator(clock: Clock) = RecurringTransactionGenerator(
+        database = database,
+        recurringTransactionDao = database.recurringTransactionDao(),
+        transactionDao = database.transactionDao(),
+        transactionRepository = TransactionRepository(
+            database = database,
+            transactionDao = database.transactionDao(),
+            budgetBookDao = database.budgetBookDao(),
+            clock = clock,
+            widgetUpdateNotifier = BalanceWidgetUpdateNotifier(context),
+        ),
+        widgetUpdateNotifier = BalanceWidgetUpdateNotifier(context),
+        clock = clock,
+    )
 }

@@ -21,7 +21,7 @@ import com.ozcomingfroo.mybudget.data.local.entity.TransactionEntity
         TransactionEntity::class,
         RecurringTransactionEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 @TypeConverters(MyBudgetTypeConverters::class)
@@ -79,6 +79,23 @@ abstract class MyBudgetDatabase : RoomDatabase() {
                         WHERE transactions.budget_book_id = budget_books.id
                         AND transactions.type = 'EXPENSE'
                     ), 0)
+                    """.trimIndent(),
+                )
+            }
+        }
+
+        val Migration3To4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS index_transactions_budget_book_id_occurred_date_id
+                    ON transactions(budget_book_id, occurred_date, id)
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS index_recurring_transactions_is_active_next_run_date_id
+                    ON recurring_transactions(is_active, next_run_date, id)
                     """.trimIndent(),
                 )
             }

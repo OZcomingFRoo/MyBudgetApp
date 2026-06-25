@@ -26,6 +26,24 @@ interface BudgetBookDao {
     @Query("SELECT * FROM budget_books WHERE archived_at IS NULL ORDER BY title LIMIT 1")
     suspend fun getFirstActive(): BudgetBookEntity?
 
+    @Query(
+        """
+        SELECT * FROM budget_books
+        ORDER BY
+            CASE
+                WHEN :selectedBudgetBookId IS NOT NULL
+                    AND id = :selectedBudgetBookId
+                    AND archived_at IS NULL THEN 0
+                WHEN archived_at IS NULL THEN 1
+                ELSE 2
+            END,
+            CASE WHEN archived_at IS NULL THEN title ELSE NULL END,
+            id
+        LIMIT 1
+        """,
+    )
+    suspend fun getWidgetCandidate(selectedBudgetBookId: Long?): BudgetBookEntity?
+
     @Query("SELECT COUNT(*) FROM budget_books")
     suspend fun count(): Int
 

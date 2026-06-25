@@ -33,6 +33,7 @@ object DataModule {
     ).addMigrations(
         MyBudgetDatabase.Migration1To2,
         MyBudgetDatabase.Migration2To3,
+        MyBudgetDatabase.Migration3To4,
     ).build()
 
     @Provides
