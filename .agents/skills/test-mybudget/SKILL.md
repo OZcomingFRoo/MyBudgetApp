@@ -1,4 +1,4 @@
-﻿---
+---
 name: test-mybudget
 description: Run the My Budget Android project's tests. Use when the user asks Codex to run tests, unit tests, Gradle test, verify test status, check regressions, or rerun the test suite after code changes.
 ---

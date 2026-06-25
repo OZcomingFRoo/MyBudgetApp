@@ -1,4 +1,4 @@
-﻿---
+---
 name: build-mybudget
 description: Build the My Budget Android project. Use when the user asks Codex to build, compile, assemble, verify compilation, produce a debug APK, run assembleDebug, or check whether the Android project currently builds.
 ---
