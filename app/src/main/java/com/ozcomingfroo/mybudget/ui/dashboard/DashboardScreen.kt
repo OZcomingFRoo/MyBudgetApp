@@ -77,6 +77,8 @@ internal fun DashboardScreen(
     clock: Clock,
     updateTransaction: suspend (TransactionEntity) -> Unit,
     snackbarHostState: SnackbarHostState,
+    onAddExpense: () -> Unit,
+    onAddIncome: () -> Unit,
     onAddTransaction: () -> Unit,
     onViewHistory: () -> Unit,
     onOpenReports: () -> Unit,
@@ -178,13 +180,13 @@ internal fun DashboardScreen(
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
-                    onClick = { onAddTransaction() },
+                    onClick = { onAddExpense() },
                     modifier = Modifier.weight(1f),
                 ) {
                     Text(stringResource(R.string.add_expense))
                 }
                 FilledTonalButton(
-                    onClick = { onAddTransaction() },
+                    onClick = { onAddIncome() },
                     modifier = Modifier.weight(1f),
                 ) {
                     Text(stringResource(R.string.add_income))

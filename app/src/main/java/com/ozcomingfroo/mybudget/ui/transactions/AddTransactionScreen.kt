@@ -179,12 +179,15 @@ internal fun AddTransactionScreen(
     preferences: AppPreferences,
     insertTransaction: suspend (TransactionEntity) -> Long,
     clock: Clock,
+    initialTransactionType: TransactionType? = null,
+    showCancelButton: Boolean = false,
+    onCancel: () -> Unit = {},
     onTransactionSaved: () -> Unit,
     snackbarHostState: SnackbarHostState,
 ) {
-    var transactionType by rememberSaveable(preferences.defaultTransactionType) {
+    var transactionType by rememberSaveable(initialTransactionType, preferences.defaultTransactionType) {
         mutableStateOf(
-            when (preferences.defaultTransactionType) {
+            initialTransactionType ?: when (preferences.defaultTransactionType) {
                 DefaultTransactionType.EXPENSE -> TransactionType.EXPENSE
                 DefaultTransactionType.INCOME -> TransactionType.INCOME
             },
@@ -420,76 +423,93 @@ internal fun AddTransactionScreen(
             }
         }
 
-        Button(
-            onClick = {
-                if (isSaving) {
-                    return@Button
-                }
-                val budgetBookId = selectedBudgetBookId
-                if (budgetBookId == null) {
-                    errorText = missingBookMessage
-                    return@Button
-                }
-                val amountMinor = try {
-                    MoneyFormatter.parseAmountMinor(amountText)
-                } catch (_: IllegalArgumentException) {
-                    errorText = invalidAmountMessage
-                    return@Button
-                }
-                val categoryId = selectedCategoryId
-                if (categoryId == null) {
-                    errorText = missingCategoryMessage
-                    return@Button
-                }
-                errorText = null
-                isSaving = true
-                scope.launch {
-                    try {
-                        val now = clock.instant()
-                        insertTransaction(
-                            TransactionEntity(
-                                budgetBookId = budgetBookId,
-                                categoryId = categoryId,
-                                type = transactionType,
-                                amountMinor = amountMinor,
-                                title = titleText.trim().ifBlank { null },
-                                note = noteText.trim().ifBlank { null },
-                                occurredAt = LocalDateTime.of(selectedDate, selectedTime),
-                                createdAt = now,
-                                updatedAt = now,
-                            ),
-                        )
-                        onTransactionSaved()
-                    } catch (cancellation: CancellationException) {
-                        isSaving = false
-                        throw cancellation
-                    } catch (_: Exception) {
-                        isSaving = false
-                        snackbarHostState.showSnackbar(saveFailedMessage)
-                    }
-                }
-            },
-            enabled = amountText.isNotBlank() && selectedBudgetBookId != null && selectedCategoryId != null && !isSaving,
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .testTag("add_transaction_save"),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            if (isSaving) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Filled.Save,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
+            if (showCancelButton) {
+                FilledTonalButton(
+                    onClick = onCancel,
+                    enabled = !isSaving,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("add_transaction_cancel"),
+                ) {
+                    Text(stringResource(R.string.cancel))
+                }
             }
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(stringResource(R.string.save_transaction))
+            Button(
+                onClick = {
+                    if (isSaving) {
+                        return@Button
+                    }
+                    val budgetBookId = selectedBudgetBookId
+                    if (budgetBookId == null) {
+                        errorText = missingBookMessage
+                        return@Button
+                    }
+                    val amountMinor = try {
+                        MoneyFormatter.parseAmountMinor(amountText)
+                    } catch (_: IllegalArgumentException) {
+                        errorText = invalidAmountMessage
+                        return@Button
+                    }
+                    val categoryId = selectedCategoryId
+                    if (categoryId == null) {
+                        errorText = missingCategoryMessage
+                        return@Button
+                    }
+                    errorText = null
+                    isSaving = true
+                    scope.launch {
+                        try {
+                            val now = clock.instant()
+                            insertTransaction(
+                                TransactionEntity(
+                                    budgetBookId = budgetBookId,
+                                    categoryId = categoryId,
+                                    type = transactionType,
+                                    amountMinor = amountMinor,
+                                    title = titleText.trim().ifBlank { null },
+                                    note = noteText.trim().ifBlank { null },
+                                    occurredAt = LocalDateTime.of(selectedDate, selectedTime),
+                                    createdAt = now,
+                                    updatedAt = now,
+                                ),
+                            )
+                            onTransactionSaved()
+                        } catch (cancellation: CancellationException) {
+                            isSaving = false
+                            throw cancellation
+                        } catch (_: Exception) {
+                            isSaving = false
+                            snackbarHostState.showSnackbar(saveFailedMessage)
+                        }
+                    }
+                },
+                enabled = amountText.isNotBlank() && selectedBudgetBookId != null && selectedCategoryId != null && !isSaving,
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag("add_transaction_save"),
+            ) {
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.Save,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(stringResource(R.string.save_transaction))
+            }
         }
     }
 

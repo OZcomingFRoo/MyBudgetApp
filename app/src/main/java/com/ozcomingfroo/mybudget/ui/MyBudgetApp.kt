@@ -54,9 +54,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.ozcomingfroo.mybudget.R
 import com.ozcomingfroo.mybudget.data.local.entity.BudgetBookEntity
 import com.ozcomingfroo.mybudget.data.local.entity.CategoryEntity
+import com.ozcomingfroo.mybudget.data.local.model.TransactionType
 import com.ozcomingfroo.mybudget.data.preferences.AppLanguageMode
 import com.ozcomingfroo.mybudget.data.preferences.AppPreferences
 import com.ozcomingfroo.mybudget.data.preferences.AppPreferencesRepository
@@ -196,6 +199,12 @@ private enum class AppDestination(
     Settings("settings", R.string.nav_settings, Icons.Filled.Settings),
 }
 
+private const val AddTransactionTypeArg = "type"
+private const val AddTransactionOriginArg = "origin"
+private const val AddTransactionOriginDashboard = "dashboard"
+private const val AddTransactionRoutePattern =
+    "add_transaction?type={$AddTransactionTypeArg}&origin={$AddTransactionOriginArg}"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MyBudgetAppShell(
@@ -219,7 +228,8 @@ private fun MyBudgetAppShell(
     val snackbarHostState = remember { SnackbarHostState() }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: AppDestination.Dashboard.route
-    val currentDestination = AppDestination.entries.firstOrNull { it.route == currentRoute }
+    val currentRouteBase = currentRoute.substringBefore("?")
+    val currentDestination = AppDestination.entries.firstOrNull { it.route == currentRouteBase }
         ?: AppDestination.Dashboard
     val isDrawerActive = drawerState.currentValue != DrawerValue.Closed ||
         drawerState.targetValue != DrawerValue.Closed
@@ -262,15 +272,15 @@ private fun MyBudgetAppShell(
                                 contentDescription = null,
                             )
                         },
-                        selected = currentRoute == destination.route,
+                        selected = currentRouteBase == destination.route,
                         onClick = {
                             scope.launch { drawerState.close() }
                             navController.navigate(destination.route) {
                                 popUpTo(AppDestination.Dashboard.route) {
-                                    saveState = true
+                                    saveState = destination != AppDestination.Dashboard
                                 }
                                 launchSingleTop = true
-                                restoreState = true
+                                restoreState = destination != AppDestination.Dashboard
                             }
                         },
                         modifier = Modifier.padding(horizontal = 12.dp),
@@ -329,18 +339,51 @@ private fun MyBudgetAppShell(
                         clock = clock,
                         updateTransaction = transactionRepository::update,
                         snackbarHostState = snackbarHostState,
+                        onAddExpense = {
+                            navController.navigateDashboardAddTransaction(TransactionType.EXPENSE)
+                        },
+                        onAddIncome = {
+                            navController.navigateDashboardAddTransaction(TransactionType.INCOME)
+                        },
                         onAddTransaction = { navController.navigate(AppDestination.AddTransaction.route) },
                         onViewHistory = { navController.navigate(AppDestination.History.route) },
                         onOpenReports = { navController.navigate(AppDestination.Reports.route) },
                     )
                 }
-                composable(AppDestination.AddTransaction.route) {
+                composable(
+                    route = AddTransactionRoutePattern,
+                    arguments = listOf(
+                        navArgument(AddTransactionTypeArg) {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        },
+                        navArgument(AddTransactionOriginArg) {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        },
+                    ),
+                ) { addTransactionEntry ->
+                    val initialTransactionType = addTransactionEntry.arguments
+                        ?.getString(AddTransactionTypeArg)
+                        ?.let(::parseTransactionTypeRouteArg)
+                    val showCancelButton = addTransactionEntry.arguments
+                        ?.getString(AddTransactionOriginArg) == AddTransactionOriginDashboard
                     AddTransactionScreen(
                         selectedBudgetBookId = selectedBudgetBookId,
                         categories = categories,
                         preferences = preferences,
                         insertTransaction = transactionRepository::insert,
                         clock = clock,
+                        initialTransactionType = initialTransactionType,
+                        showCancelButton = showCancelButton,
+                        onCancel = {
+                            navController.navigate(AppDestination.Dashboard.route) {
+                                popUpTo(AppDestination.Dashboard.route)
+                                launchSingleTop = true
+                            }
+                        },
                         onTransactionSaved = {
                             navController.navigate(AppDestination.Dashboard.route) {
                                 popUpTo(AppDestination.Dashboard.route)
@@ -434,7 +477,7 @@ private fun MyBudgetAppShell(
                 }
             }
 
-            BackHandler(enabled = isDrawerActive || currentRoute != AppDestination.Dashboard.route) {
+            BackHandler(enabled = isDrawerActive || currentRouteBase != AppDestination.Dashboard.route) {
                 if (isDrawerActive) {
                     scope.launch { drawerState.close() }
                 } else {
@@ -447,6 +490,16 @@ private fun MyBudgetAppShell(
         }
     }
 }
+
+private fun androidx.navigation.NavHostController.navigateDashboardAddTransaction(type: TransactionType) {
+    navigate(
+        "${AppDestination.AddTransaction.route}?$AddTransactionTypeArg=${type.name}" +
+            "&$AddTransactionOriginArg=$AddTransactionOriginDashboard",
+    )
+}
+
+private fun parseTransactionTypeRouteArg(value: String): TransactionType? =
+    TransactionType.entries.firstOrNull { it.name == value }
 
 private fun Configuration.withLocale(locale: Locale): Configuration {
     val configuration = Configuration(this)

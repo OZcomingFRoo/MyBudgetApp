@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.datastore.core.DataStore
@@ -176,6 +177,35 @@ class MyBudgetAppBackNavigationTest {
                 .fetchSemanticsNodes()
                 .isEmpty(),
         )
+    }
+
+    @Test
+    fun dashboardDrawerItemReturnsFromDashboardLaunchedAddTransaction() {
+        setAppContent()
+
+        composeRule.onNodeWithText(context.getString(R.string.add_expense))
+            .performClick()
+        composeRule.onNodeWithContentDescription(context.getString(R.string.menu_button))
+            .performClick()
+        composeRule.onNodeWithText(context.getString(R.string.nav_dashboard))
+            .performClick()
+
+        composeRule.onNodeWithText(context.getString(R.string.add_expense))
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun cancelReturnsFromDashboardLaunchedAddTransaction() {
+        setAppContent()
+
+        composeRule.onNodeWithText(context.getString(R.string.add_income))
+            .performClick()
+        composeRule.onNodeWithTag("add_transaction_cancel")
+            .assertIsDisplayed()
+            .performClick()
+
+        composeRule.onNodeWithText(context.getString(R.string.add_income))
+            .assertIsDisplayed()
     }
 
     private fun setAppContent() {

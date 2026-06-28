@@ -3,8 +3,11 @@ package com.ozcomingfroo.mybudget.ui
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import com.ozcomingfroo.mybudget.data.local.entity.CategoryEntity
@@ -24,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -150,6 +154,88 @@ class AddTransactionScreenTest {
     }
 
     @Test
+    fun cancelButtonVisibilityFollowsDashboardLaunchFlag() {
+        val cancelCount = AtomicInteger(0)
+
+        composeRule.setContent {
+            MyBudgetTheme(themeMode = AppThemeMode.DEFAULT) {
+                AddTransactionScreen(
+                    selectedBudgetBookId = BudgetBookId,
+                    categories = listOf(testCategory()),
+                    preferences = testPreferences(),
+                    insertTransaction = { 1L },
+                    clock = TestClock,
+                    showCancelButton = false,
+                    onCancel = { cancelCount.incrementAndGet() },
+                    onTransactionSaved = {},
+                    snackbarHostState = SnackbarHostState(),
+                )
+            }
+        }
+
+        composeRule.runOnIdle {
+            assertTrue(
+                composeRule.onAllNodesWithTag("add_transaction_cancel")
+                    .fetchSemanticsNodes()
+                    .isEmpty(),
+            )
+        }
+
+        composeRule.setContent {
+            MyBudgetTheme(themeMode = AppThemeMode.DEFAULT) {
+                AddTransactionScreen(
+                    selectedBudgetBookId = BudgetBookId,
+                    categories = listOf(testCategory()),
+                    preferences = testPreferences(),
+                    insertTransaction = { 1L },
+                    clock = TestClock,
+                    showCancelButton = true,
+                    onCancel = { cancelCount.incrementAndGet() },
+                    onTransactionSaved = {},
+                    snackbarHostState = SnackbarHostState(),
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("add_transaction_cancel")
+            .assertIsDisplayed()
+            .performClick()
+        composeRule.runOnIdle {
+            assertEquals(1, cancelCount.get())
+        }
+    }
+
+    @Test
+    fun initialTransactionTypeOverridesDefaultTypeWhenSaving() {
+        val savedType = java.util.concurrent.atomic.AtomicReference<TransactionType>()
+
+        composeRule.setContent {
+            MyBudgetTheme(themeMode = AppThemeMode.DEFAULT) {
+                AddTransactionScreen(
+                    selectedBudgetBookId = BudgetBookId,
+                    categories = listOf(testCategory(type = CategoryType.INCOME)),
+                    preferences = testPreferences(defaultTransactionType = DefaultTransactionType.EXPENSE),
+                    insertTransaction = { transaction: TransactionEntity ->
+                        savedType.set(transaction.type)
+                        1L
+                    },
+                    clock = TestClock,
+                    initialTransactionType = TransactionType.INCOME,
+                    onTransactionSaved = {},
+                    snackbarHostState = SnackbarHostState(),
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("add_transaction_amount")
+            .performTextInput("25")
+        composeRule.onNodeWithTag("add_transaction_save")
+            .performTouchInput { click(center) }
+
+        composeRule.waitUntil(timeoutMillis = 5_000) { savedType.get() == TransactionType.INCOME }
+    }
+
+    @Test
     fun editTransactionSheetUpdatesExistingTransaction() {
         val updatedId = AtomicLong(0)
         val originalCreatedAt = Instant.parse("2026-06-01T08:00:00Z")
@@ -191,22 +277,25 @@ class AddTransactionScreenTest {
         composeRule.waitUntil(timeoutMillis = 5_000) { updatedId.get() == transaction.id }
     }
 
-    private fun testPreferences() = AppPreferences(
+    private fun testPreferences(
+        defaultTransactionType: DefaultTransactionType = DefaultTransactionType.EXPENSE,
+    ) = AppPreferences(
         selectedBudgetBookId = BudgetBookId,
         themeMode = AppThemeMode.DEFAULT,
         languageMode = AppLanguageMode.EN_US,
         hasCompletedOnboarding = true,
-        defaultTransactionType = DefaultTransactionType.EXPENSE,
+        defaultTransactionType = defaultTransactionType,
     )
 
     private fun testCategory(
         id: Long = CategoryId,
         title: String = "Food",
+        type: CategoryType = CategoryType.EXPENSE,
     ) = CategoryEntity(
         id = id,
         budgetBookId = BudgetBookId,
         title = title,
-        type = CategoryType.EXPENSE,
+        type = type,
         iconName = "restaurant",
         color = "#2E7D32",
         sortOrder = 0,
