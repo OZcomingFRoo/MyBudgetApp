@@ -49,6 +49,14 @@
       box-shadow: var(--shadow);
     }
 
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
     .eyebrow {
       margin: 0 0 8px;
       color: rgba(255, 255, 255, 0.82);
@@ -70,6 +78,40 @@
       margin: 18px 0 0;
       color: rgba(255, 255, 255, 0.9);
       font-size: 1.08rem;
+    }
+
+    .language-switcher {
+      display: inline-flex;
+      flex: 0 0 auto;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .language-switcher button {
+      min-width: 78px;
+      min-height: 36px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.86);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.92rem;
+      font-weight: 750;
+    }
+
+    .language-switcher button[aria-pressed="true"] {
+      background: #ffffff;
+      color: var(--primary-dark);
+      box-shadow: 0 6px 18px rgba(23, 49, 38, 0.18);
+    }
+
+    .language-switcher button:focus-visible {
+      outline: 3px solid rgba(242, 201, 76, 0.9);
+      outline-offset: 2px;
     }
 
     .meta {
@@ -95,6 +137,10 @@
     .policy {
       display: grid;
       gap: 16px;
+    }
+
+    .policy[hidden] {
+      display: none;
     }
 
     section {
@@ -124,7 +170,7 @@
 
     ul {
       margin: 0 0 12px;
-      padding-left: 22px;
+      padding-inline-start: 22px;
     }
 
     li + li {
@@ -145,7 +191,7 @@
     }
 
     .callout {
-      border-left: 5px solid var(--accent);
+      border-inline-start: 5px solid var(--accent);
       background: #fffdf4;
     }
 
@@ -154,6 +200,14 @@
       color: var(--muted);
       text-align: center;
       font-size: 0.92rem;
+    }
+
+    [dir="rtl"] .topbar {
+      flex-direction: row-reverse;
+    }
+
+    [dir="rtl"] .language-switcher {
+      direction: ltr;
     }
 
     @media (max-width: 640px) {
@@ -167,24 +221,49 @@
         border-radius: 16px;
         padding: 22px;
       }
+
+      .topbar {
+        display: grid;
+        gap: 18px;
+      }
+
+      [dir="rtl"] .topbar {
+        flex-direction: initial;
+      }
+
+      .language-switcher {
+        width: 100%;
+      }
+
+      .language-switcher button {
+        flex: 1;
+      }
     }
   </style>
 </head>
 <body>
   <main>
     <header>
-      <p class="eyebrow">Privacy Policy</p>
-      <h1>My Budget Privacy Policy</h1>
-      <p class="summary">
+      <div class="topbar">
+        <div>
+          <p class="eyebrow" data-i18n-en="Privacy Policy" data-i18n-he="מדיניות פרטיות">Privacy Policy</p>
+          <h1 data-i18n-en="My Budget Privacy Policy" data-i18n-he="מדיניות הפרטיות של My Budget">My Budget Privacy Policy</h1>
+        </div>
+        <nav class="language-switcher" aria-label="Language">
+          <button type="button" data-language="en" aria-pressed="true">English</button>
+          <button type="button" data-language="he" aria-pressed="false">עברית</button>
+        </nav>
+      </div>
+      <p class="summary" data-i18n-en="My Budget is a local-first Android budgeting app. Your budget records are stored on your device and are not sent to us." data-i18n-he="My Budget היא אפליקציית תקציב לאנדרואיד ששומרת מידע מקומית. רשומות התקציב שלך נשמרות במכשיר שלך ואינן נשלחות אלינו.">
         My Budget is a local-first Android budgeting app. Your budget records are stored on your device and are not sent to us.
       </p>
       <div class="meta" aria-label="Policy details">
-        <span class="pill">Last updated: June 28, 2026</span>
+        <span class="pill" data-i18n-en="Last updated: June 28, 2026" data-i18n-he="עודכן לאחרונה: 28 ביוני 2026">Last updated: June 28, 2026</span>
         <span class="pill">Package: com.ozcomingfroo.mybudget</span>
       </div>
     </header>
 
-    <div class="policy">
+    <div class="policy" id="policy-en" lang="en">
       <section>
         <h2>Overview</h2>
         <p>
@@ -267,9 +346,123 @@
       </section>
     </div>
 
+    <div class="policy" id="policy-he" lang="he" dir="rtl" hidden>
+      <section>
+        <h2>סקירה כללית</h2>
+        <p>
+          מדיניות פרטיות זו מסבירה כיצד My Budget מטפלת במידע בעת השימוש באפליקציית האנדרואיד. My Budget מיועדת למעקב אישי ופשוט אחר כספים, כולל הכנסות, הוצאות, קטגוריות, פעולות חוזרות, דוחות, הגדרות ווידג'ט יתרה למסך הבית.
+        </p>
+        <p>
+          הגרסה הנוכחית של האפליקציה שומרת מידע מקומית בלבד. איננו מפעילים מערכת חשבונות, שירות סנכרון ענן, רשת פרסום, שירות אנליטיקה או שירות תשלומים עבור האפליקציה.
+        </p>
+      </section>
+
+      <section>
+        <h2>המידע שמוזן באפליקציה</h2>
+        <p>
+          ניתן להזין מידע הקשור לתקציב, כגון שמות ספרי תקציב, תיאורים אופציונליים, קטגוריות, רשומות הכנסה, רשומות הוצאה, פרטי פעולות חוזרות, תאריכים, הערות והעדפות אפליקציה.
+        </p>
+        <p>
+          מידע זה עשוי לתאר את הכספים האישיים שלך, ולכן מומלץ להזין רק מידע שנוח לך לשמור במכשיר שלך.
+        </p>
+      </section>
+
+      <section>
+        <h2>כיצד המידע נשמר</h2>
+        <p>
+          My Budget שומרת את נתוני האפליקציה מקומית במכשיר האנדרואיד שלך באמצעות אחסון האפליקציה, כולל מסד נתונים מקומי והעדפות אפליקציה. ווידג'ט מסך הבית קורא מידע יתרה מקומי עבור ספר התקציב שנבחר.
+        </p>
+        <p>
+          איננו מקבלים, אוספים או מעבדים מרחוק את נתוני התקציב שמוזנים באפליקציה.
+        </p>
+      </section>
+
+      <section>
+        <h2>רשת, אנליטיקה, פרסומות ושיתוף</h2>
+        <ul>
+          <li>My Budget אינה דורשת הרשמה לחשבון.</li>
+          <li>My Budget אינה מעלה את נתוני התקציב שלך לשרתים שלנו.</li>
+          <li>My Budget אינה כוללת פרסומות או מעקב פרסומי של צד שלישי.</li>
+          <li>My Budget אינה כוללת מעקב אנליטיקה בגרסה הנוכחית.</li>
+          <li>My Budget אינה מוכרת מידע אישי.</li>
+          <li>מניפסט האנדרואיד הנוכחי של האפליקציה אינו מצהיר על הרשאת אינטרנט.</li>
+        </ul>
+      </section>
+
+      <section class="callout">
+        <h2>גיבוי במכשיר</h2>
+        <p>
+          Android עשוי לגבות נתוני אפליקציה בהתאם להגדרות המכשיר, גרסת מערכת ההפעלה והגדרות הגיבוי של Google או של יצרן המכשיר. גיבויים אלה נשלטים על ידי Android והגדרות החשבון או המכשיר שלך, ולא על ידי My Budget.
+        </p>
+      </section>
+
+      <section>
+        <h2>הבחירות שלך ושליטה בנתונים</h2>
+        <p>
+          ניתן לערוך ולמחוק ספרי תקציב, קטגוריות, פעולות, פעולות חוזרות והגדרות בתוך האפליקציה במקומות שבהם קיימות אפשרויות אלה. ניתן גם להסיר נתוני אפליקציה באמצעות הסרת האפליקציה או ניקוי אחסון האפליקציה דרך הגדרות מערכת Android.
+        </p>
+        <p>
+          אם גיבוי Android מופעל במכשיר שלך, מחיקת נתוני האפליקציה המקומיים עשויה שלא להסיר מיד נתונים מגיבויי מכשיר קיימים. יש לעיין בהגדרות הגיבוי של Android לשליטה בגיבויים.
+        </p>
+      </section>
+
+      <section>
+        <h2>פרטיות ילדים</h2>
+        <p>
+          My Budget אינה מיועדת לילדים. איננו אוספים ביודעין מידע אישי מילדים.
+        </p>
+      </section>
+
+      <section>
+        <h2>שינויים עתידיים</h2>
+        <p>
+          אם My Budget תוסיף בעתיד תכונות כגון סנכרון ענן, יצוא, שיתוף, אנליטיקה, דיווח קריסות או כניסה לחשבון, מדיניות זו תעודכן כדי לתאר את אופן הטיפול החדש בנתונים לפני שחרור התכונות או במועד השחרור שלהן.
+        </p>
+      </section>
+
+      <section>
+        <h2>יצירת קשר</h2>
+        <p>
+          לשאלות פרטיות או בקשות תמיכה, ניתן לפתוח issue במאגר הפרויקט:
+          <a href="https://github.com/OZcomingFRoo/MyBudgetApp/issues">https://github.com/OZcomingFRoo/MyBudgetApp/issues</a>.
+        </p>
+      </section>
+    </div>
+
     <footer>
-      <p>&copy; 2026 My Budget. This page is provided for app store review and user transparency.</p>
+      <p data-i18n-en="&copy; 2026 My Budget. This page is provided for app store review and user transparency." data-i18n-he="&copy; 2026 My Budget. דף זה מסופק לצורך בדיקת חנויות אפליקציות ושקיפות למשתמשים.">&copy; 2026 My Budget. This page is provided for app store review and user transparency.</p>
     </footer>
   </main>
+
+  <script>
+    const buttons = document.querySelectorAll("[data-language]");
+    const policies = {
+      en: document.getElementById("policy-en"),
+      he: document.getElementById("policy-he"),
+    };
+
+    function setLanguage(language) {
+      const isHebrew = language === "he";
+      document.documentElement.lang = language;
+      document.documentElement.dir = isHebrew ? "rtl" : "ltr";
+      document.title = isHebrew ? "מדיניות פרטיות | My Budget" : "Privacy Policy | My Budget";
+
+      Object.entries(policies).forEach(([key, element]) => {
+        element.hidden = key !== language;
+      });
+
+      document.querySelectorAll("[data-i18n-en]").forEach((element) => {
+        element.innerHTML = element.dataset[`i18n${language.charAt(0).toUpperCase() + language.slice(1)}`];
+      });
+
+      buttons.forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.language === language));
+      });
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => setLanguage(button.dataset.language));
+    });
+  </script>
 </body>
 </html>
