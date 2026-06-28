@@ -2,6 +2,7 @@
 
 import android.content.Context
 import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -220,6 +221,8 @@ private fun MyBudgetAppShell(
     val currentRoute = backStackEntry?.destination?.route ?: AppDestination.Dashboard.route
     val currentDestination = AppDestination.entries.firstOrNull { it.route == currentRoute }
         ?: AppDestination.Dashboard
+    val isDrawerActive = drawerState.currentValue != DrawerValue.Closed ||
+        drawerState.targetValue != DrawerValue.Closed
 
     LaunchedEffect(launchDestination) {
         when (launchDestination) {
@@ -428,6 +431,17 @@ private fun MyBudgetAppShell(
                         appPreferencesRepository = appPreferencesRepository,
                         budgetBookRepository = budgetBookRepository,
                     )
+                }
+            }
+
+            BackHandler(enabled = isDrawerActive || currentRoute != AppDestination.Dashboard.route) {
+                if (isDrawerActive) {
+                    scope.launch { drawerState.close() }
+                } else {
+                    navController.navigate(AppDestination.Dashboard.route) {
+                        popUpTo(AppDestination.Dashboard.route)
+                        launchSingleTop = true
+                    }
                 }
             }
         }

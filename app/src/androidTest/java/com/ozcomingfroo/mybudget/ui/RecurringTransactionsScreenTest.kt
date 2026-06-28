@@ -107,7 +107,7 @@ class RecurringTransactionsScreenTest {
         val deletedId = AtomicLong(0)
         val fakeDao = object : RecurringTransactionDao {
             override fun observeForBudgetBook(budgetBookId: Long): Flow<List<RecurringTransactionEntity>> =
-                flowOf(emptyList())
+                flowOf(listOf(testRule()))
 
             override suspend fun getById(id: Long): RecurringTransactionEntity? = null
 
@@ -133,7 +133,6 @@ class RecurringTransactionsScreenTest {
                 RecurringTransactionsScreen(
                     selectedBudgetBookId = BudgetBookId,
                     categories = listOf(testCategory()),
-                    recurringTransactions = listOf(testRule()),
                     recurringTransactionRepository = repository,
                     clock = TestClock,
                     snackbarHostState = SnackbarHostState(),
