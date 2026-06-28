@@ -29,7 +29,7 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:text="@string/widget_balance_title"
-        android:textColor="@android:color/white"
+        android:textColor="#17201A"
         android:textSize="16sp" />
 
     <TextView
@@ -44,7 +44,7 @@
         android:gravity="center_vertical"
         android:maxLines="1"
         android:text="0.00"
-        android:textColor="@android:color/white"
+        android:textColor="#17201A"
         android:textSize="22sp"
         android:textStyle="bold" />
 
@@ -62,7 +62,7 @@
         android:paddingStart="8dp"
         android:paddingEnd="8dp"
         android:text="@string/widget_add_short"
-        android:textColor="#E7B84B"
+        android:textColor="#2E7D32"
         android:textSize="15sp"
         android:textStyle="bold" />
 </RelativeLayout>

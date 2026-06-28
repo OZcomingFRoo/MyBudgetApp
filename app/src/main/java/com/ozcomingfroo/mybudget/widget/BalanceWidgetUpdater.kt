@@ -120,8 +120,8 @@ class BalanceWidgetUpdater @Inject constructor(
         } else {
             WidgetTheme(
                 backgroundRes = R.drawable.widget_balance_background,
-                primaryTextColor = Color.WHITE,
-                accentTextColor = Color.rgb(231, 184, 75),
+                primaryTextColor = Color.rgb(23, 32, 26),
+                accentTextColor = Color.rgb(46, 125, 50),
             )
         }
     }
