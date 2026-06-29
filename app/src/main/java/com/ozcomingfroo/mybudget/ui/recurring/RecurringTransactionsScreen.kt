@@ -83,9 +83,11 @@ import com.ozcomingfroo.mybudget.data.local.model.CategoryType
 import com.ozcomingfroo.mybudget.data.local.model.RecurringFrequency
 import com.ozcomingfroo.mybudget.data.local.model.TransactionType
 import com.ozcomingfroo.mybudget.data.repository.RecurringTransactionRepository
+import com.ozcomingfroo.mybudget.domain.recurring.RecurringSchedule
 import com.ozcomingfroo.mybudget.ui.theme.ExpenseRed
 import com.ozcomingfroo.mybudget.ui.theme.IncomeGreen
 import java.time.Clock
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -419,16 +421,24 @@ private fun RecurringFrequency.recurrencePhrase(interval: Int): String =
         } else {
             stringResource(R.string.recurring_every_n_days, interval)
         }
-        RecurringFrequency.WEEKLY -> if (interval == 1) {
-            stringResource(R.string.recurring_every_week)
-        } else {
-            stringResource(R.string.recurring_every_n_weeks, interval)
-        }
-        RecurringFrequency.MONTHLY -> if (interval == 1) {
-            stringResource(R.string.recurring_every_month)
-        } else {
-            stringResource(R.string.recurring_every_n_months, interval)
-        }
+    RecurringFrequency.WEEKLY -> if (interval == 1) {
+        stringResource(R.string.recurring_every_week)
+    } else if (interval == 2) {
+        stringResource(R.string.recurring_every_2_weeks)
+    } else if (interval == 3) {
+        stringResource(R.string.recurring_every_3_weeks)
+    } else {
+        stringResource(R.string.recurring_every_n_weeks, interval)
+    }
+    RecurringFrequency.MONTHLY -> if (interval == 1) {
+        stringResource(R.string.recurring_every_month)
+    } else if (interval == 2) {
+        stringResource(R.string.recurring_every_2_months)
+    } else if (interval == 3) {
+        stringResource(R.string.recurring_every_3_months)
+    } else {
+        stringResource(R.string.recurring_every_n_months, interval)
+    }
         RecurringFrequency.YEARLY -> if (interval == 1) {
             stringResource(R.string.recurring_every_year)
         } else {
@@ -866,11 +876,22 @@ internal fun RecurringTransactionEditorSheet(
         monthly = stringResource(R.string.frequency_monthly),
         yearly = stringResource(R.string.frequency_yearly),
         interval = stringResource(R.string.interval),
-        startDate = stringResource(R.string.start_date),
-        nextRunDate = stringResource(R.string.next_run_date),
+        weekday = stringResource(R.string.weekday),
+        monthDay = stringResource(R.string.month_day),
         endDateOptional = stringResource(R.string.end_date_optional),
         active = stringResource(R.string.active),
         activeHelper = stringResource(R.string.recurring_active_helper),
+        everyDay = stringResource(R.string.recurring_every_day),
+        everyWeek = stringResource(R.string.recurring_every_week),
+        everyMonth = stringResource(R.string.recurring_every_month),
+        everyYear = stringResource(R.string.recurring_every_year),
+        monday = stringResource(R.string.monday),
+        tuesday = stringResource(R.string.tuesday),
+        wednesday = stringResource(R.string.wednesday),
+        thursday = stringResource(R.string.thursday),
+        friday = stringResource(R.string.friday),
+        saturday = stringResource(R.string.saturday),
+        sunday = stringResource(R.string.sunday),
         saveRecurringTransaction = stringResource(R.string.save_recurring_transaction),
         updateRecurringTransaction = stringResource(R.string.update_recurring_transaction),
         apply = stringResource(R.string.apply),
@@ -893,16 +914,21 @@ internal fun RecurringTransactionEditorSheet(
     var frequency by rememberSaveable(rule?.id) {
         mutableStateOf(rule?.frequency ?: RecurringFrequency.MONTHLY)
     }
-    var intervalText by rememberSaveable(rule?.id) {
-        mutableStateOf((rule?.interval ?: 1).toString())
+    var interval by rememberSaveable(rule?.id) {
+        mutableStateOf(rule?.interval ?: RecurringSchedule.MinInterval)
     }
-    var startDate by rememberSaveable(rule?.id) {
-        mutableStateOf(rule?.startDate ?: today)
+    var selectedWeekday by rememberSaveable(rule?.id) {
+        mutableStateOf(rule?.scheduleWeekday ?: rule?.startDate?.dayOfWeek?.value ?: today.dayOfWeek.value)
     }
-    var nextRunDate by rememberSaveable(rule?.id) {
-        mutableStateOf(rule?.nextRunDate ?: today)
+    var selectedMonthDay by rememberSaveable(rule?.id) {
+        mutableStateOf(
+            (rule?.scheduleMonthDay ?: rule?.startDate?.dayOfMonth ?: today.dayOfMonth)
+                .coerceIn(RecurringSchedule.MinMonthDay, RecurringSchedule.MaxMonthDay),
+        )
     }
-    var endDate by rememberSaveable(rule?.id) { mutableStateOf(rule?.endDate) }
+    var endDate by rememberSaveable(rule?.id) {
+        mutableStateOf(rule?.endDate ?: if (rule == null) today.plusYears(10) else null)
+    }
     var isActive by rememberSaveable(rule?.id) { mutableStateOf(rule?.isActive ?: true) }
     var isSaving by rememberSaveable { mutableStateOf(false) }
     var errorText by rememberSaveable { mutableStateOf<String?>(null) }
@@ -921,7 +947,6 @@ internal fun RecurringTransactionEditorSheet(
     val invalidAmountMessage = stringResource(R.string.amount_error)
     val missingCategoryMessage = stringResource(R.string.category_error)
     val missingBookMessage = stringResource(R.string.loading_budget_book)
-    val invalidIntervalMessage = stringResource(R.string.recurring_interval_error)
     val invalidDateMessage = stringResource(R.string.recurring_date_error)
     val saveFailedMessage = stringResource(R.string.recurring_transaction_save_error)
     val savedMessage = stringResource(R.string.recurring_transaction_saved)
@@ -1044,59 +1069,81 @@ internal fun RecurringTransactionEditorSheet(
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         RecurringFrequencyDropdown(
                             frequency = frequency,
-                            onFrequencySelected = { frequency = it },
+                            onFrequencySelected = { selectedFrequency ->
+                                frequency = selectedFrequency
+                                selectedWeekday = selectedWeekday.coerceIn(1, 7)
+                                selectedMonthDay = selectedMonthDay.coerceIn(
+                                    RecurringSchedule.MinMonthDay,
+                                    RecurringSchedule.MaxMonthDay,
+                                )
+                            },
                             modifier = Modifier.weight(1f),
                             strings = strings,
                         )
-                        OutlinedTextField(
-                            value = intervalText,
-                            onValueChange = { intervalText = it.filter(Char::isDigit).take(3) },
-                            label = { Text(strings.interval) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
+                        RecurringIntervalDropdown(
+                            frequency = frequency,
+                            interval = interval,
+                            onIntervalSelected = { interval = it },
                             modifier = Modifier
                                 .weight(1f)
                                 .testTag("recurring_interval"),
+                            strings = strings,
                         )
                     }
                 }
-                item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        RecurringDateButton(
-                            label = strings.startDate,
-                            date = startDate,
-                            modifier = Modifier.weight(1f),
-                            onDateSelected = { selectedDate ->
-                                startDate = selectedDate
-                                if (nextRunDate.isBefore(selectedDate)) {
-                                    nextRunDate = selectedDate
-                                }
-                                if (endDate != null && endDate!!.isBefore(selectedDate)) {
-                                    endDate = selectedDate
-                                }
-                            },
-                            applyLabel = strings.apply,
-                            cancelLabel = strings.cancel,
-                        )
-                        RecurringDateButton(
-                            label = strings.nextRunDate,
-                            date = nextRunDate,
-                            modifier = Modifier.weight(1f),
-                            onDateSelected = { selectedDate -> nextRunDate = selectedDate },
-                            applyLabel = strings.apply,
-                            cancelLabel = strings.cancel,
+                if (frequency == RecurringFrequency.WEEKLY) {
+                    item {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            WeekdayDropdown(
+                                selectedWeekday = selectedWeekday,
+                                onWeekdaySelected = { selectedWeekday = it },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("recurring_weekday"),
+                                strings = strings,
+                            )
+                            RecurringNullableDateButton(
+                                label = strings.endDateOptional,
+                                date = endDate,
+                                onDateSelected = { selectedDate -> endDate = selectedDate },
+                                onClear = { endDate = null },
+                                modifier = Modifier.weight(1f),
+                                strings = strings,
+                            )
+                        }
+                    }
+                } else if (frequency == RecurringFrequency.MONTHLY) {
+                    item {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            MonthDayDropdown(
+                                selectedDay = selectedMonthDay,
+                                onDaySelected = { selectedMonthDay = it },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("recurring_month_day"),
+                                strings = strings,
+                            )
+                            RecurringNullableDateButton(
+                                label = strings.endDateOptional,
+                                date = endDate,
+                                onDateSelected = { selectedDate -> endDate = selectedDate },
+                                onClear = { endDate = null },
+                                modifier = Modifier.weight(1f),
+                                strings = strings,
+                            )
+                        }
+                    }
+                } else {
+                    item {
+                        RecurringNullableDateButton(
+                            label = strings.endDateOptional,
+                            date = endDate,
+                            onDateSelected = { selectedDate -> endDate = selectedDate },
+                            onClear = { endDate = null },
+                            modifier = Modifier.fillMaxWidth(),
+                            strings = strings,
                         )
                     }
-                }
-                item {
-                    RecurringNullableDateButton(
-                        label = strings.endDateOptional,
-                        date = endDate,
-                        onDateSelected = { selectedDate -> endDate = selectedDate },
-                        onClear = { endDate = null },
-                        modifier = Modifier.fillMaxWidth(),
-                        strings = strings,
-                    )
                 }
                 item {
                     Row(
@@ -1154,12 +1201,25 @@ internal fun RecurringTransactionEditorSheet(
                             errorText = invalidAmountMessage
                             return@Button
                         }
-                        val interval = intervalText.toIntOrNull()
-                        if (interval == null || interval < 1) {
-                            errorText = invalidIntervalMessage
-                            return@Button
+                        val scheduleWeekday = RecurringSchedule.normalizedWeekday(frequency, selectedWeekday)
+                        val scheduleMonthDay = RecurringSchedule.normalizedMonthDay(frequency, selectedMonthDay)
+                        val shouldReanchor = rule == null ||
+                            frequency != rule.frequency ||
+                            interval != rule.interval ||
+                            scheduleWeekday != rule.effectiveScheduleWeekday() ||
+                            scheduleMonthDay != rule.effectiveScheduleMonthDay()
+                        val computedStartDate = if (shouldReanchor) {
+                            RecurringSchedule.nextStartDate(
+                                frequency = frequency,
+                                today = today,
+                                scheduleWeekday = scheduleWeekday,
+                                scheduleMonthDay = scheduleMonthDay,
+                            )
+                        } else {
+                            rule.startDate
                         }
-                        if (nextRunDate.isBefore(startDate) || (endDate != null && endDate!!.isBefore(startDate))) {
+                        val computedNextRunDate = if (shouldReanchor) computedStartDate else rule.nextRunDate
+                        if (endDate != null && endDate!!.isBefore(computedStartDate)) {
                             errorText = invalidDateMessage
                             return@Button
                         }
@@ -1184,9 +1244,11 @@ internal fun RecurringTransactionEditorSheet(
                                         note = noteText.trim().ifBlank { null },
                                         frequency = frequency,
                                         interval = interval,
-                                        startDate = startDate,
+                                        scheduleWeekday = scheduleWeekday,
+                                        scheduleMonthDay = scheduleMonthDay,
+                                        startDate = computedStartDate,
                                         endDate = endDate,
-                                        nextRunDate = nextRunDate,
+                                        nextRunDate = computedNextRunDate,
                                         lastRunDate = rule?.lastRunDate,
                                         isActive = isActive,
                                         createdAt = rule?.createdAt ?: now,
@@ -1262,13 +1324,160 @@ private fun RecurringFrequencyDropdown(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
-            RecurringFrequency.entries.forEach { option ->
+            val options = if (frequency == RecurringFrequency.YEARLY) {
+                listOf(RecurringFrequency.YEARLY, RecurringFrequency.DAILY, RecurringFrequency.WEEKLY, RecurringFrequency.MONTHLY)
+            } else {
+                listOf(RecurringFrequency.DAILY, RecurringFrequency.WEEKLY, RecurringFrequency.MONTHLY)
+            }
+            options.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(option.label(strings)) },
                     onClick = {
                         onFrequencySelected(option)
                         expanded = false
                     },
+                    modifier = Modifier.testTag("recurring_frequency_${option.name.lowercase()}"),
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RecurringIntervalDropdown(
+    frequency: RecurringFrequency,
+    interval: Int,
+    onIntervalSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    strings: RecurringEditorStrings,
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier,
+    ) {
+        OutlinedTextField(
+            value = frequency.intervalLabel(interval, strings),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(strings.interval) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                .fillMaxWidth(),
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            (RecurringSchedule.MinInterval..RecurringSchedule.MaxSimpleInterval).forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(frequency.intervalLabel(option, strings)) },
+                    onClick = {
+                        onIntervalSelected(option)
+                        expanded = false
+                    },
+                    modifier = Modifier.testTag("recurring_interval_$option"),
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WeekdayDropdown(
+    selectedWeekday: Int,
+    onWeekdaySelected: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    strings: RecurringEditorStrings,
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val selectedDay = DayOfWeek.entries.firstOrNull { it.value == selectedWeekday } ?: DayOfWeek.MONDAY
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier,
+    ) {
+        OutlinedTextField(
+            value = selectedDay.label(strings),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(strings.weekday) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                .fillMaxWidth(),
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            WeekdayDropdownOrder.forEach { day ->
+                DropdownMenuItem(
+                    text = { Text(day.label(strings)) },
+                    onClick = {
+                        onWeekdaySelected(day.value)
+                        expanded = false
+                    },
+                    modifier = Modifier.testTag("recurring_weekday_${day.value}"),
+                )
+            }
+        }
+    }
+}
+
+private val WeekdayDropdownOrder = listOf(
+    DayOfWeek.SUNDAY,
+    DayOfWeek.MONDAY,
+    DayOfWeek.TUESDAY,
+    DayOfWeek.WEDNESDAY,
+    DayOfWeek.THURSDAY,
+    DayOfWeek.FRIDAY,
+    DayOfWeek.SATURDAY,
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MonthDayDropdown(
+    selectedDay: Int,
+    onDaySelected: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    strings: RecurringEditorStrings,
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier,
+    ) {
+        OutlinedTextField(
+            value = selectedDay.coerceIn(
+                RecurringSchedule.MinMonthDay,
+                RecurringSchedule.MaxMonthDay,
+            ).toString(),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(strings.monthDay) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                .fillMaxWidth(),
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            (RecurringSchedule.MinMonthDay..RecurringSchedule.MaxMonthDay).forEach { day ->
+                DropdownMenuItem(
+                    text = { Text(day.toString()) },
+                    onClick = {
+                        onDaySelected(day)
+                        expanded = false
+                    },
+                    modifier = Modifier.testTag("recurring_month_day_$day"),
                 )
             }
         }
@@ -1420,11 +1629,22 @@ private data class RecurringEditorStrings(
     val monthly: String,
     val yearly: String,
     val interval: String,
-    val startDate: String,
-    val nextRunDate: String,
+    val weekday: String,
+    val monthDay: String,
     val endDateOptional: String,
     val active: String,
     val activeHelper: String,
+    val everyDay: String,
+    val everyWeek: String,
+    val everyMonth: String,
+    val everyYear: String,
+    val monday: String,
+    val tuesday: String,
+    val wednesday: String,
+    val thursday: String,
+    val friday: String,
+    val saturday: String,
+    val sunday: String,
     val saveRecurringTransaction: String,
     val updateRecurringTransaction: String,
     override val apply: String,
@@ -1515,6 +1735,65 @@ private fun RecurringFrequency.label(strings: RecurringEditorStrings): String = 
     RecurringFrequency.MONTHLY -> strings.monthly
     RecurringFrequency.YEARLY -> strings.yearly
 }
+
+@Composable
+private fun RecurringFrequency.intervalLabel(
+    interval: Int,
+    strings: RecurringEditorStrings,
+): String = when (this) {
+    RecurringFrequency.DAILY -> if (interval == 1) {
+        strings.everyDay
+    } else {
+        stringResource(R.string.recurring_every_n_days, interval)
+    }
+    RecurringFrequency.WEEKLY -> if (interval == 1) {
+        strings.everyWeek
+    } else if (interval == 2) {
+        stringResource(R.string.recurring_every_2_weeks)
+    } else if (interval == 3) {
+        stringResource(R.string.recurring_every_3_weeks)
+    } else {
+        stringResource(R.string.recurring_every_n_weeks, interval)
+    }
+    RecurringFrequency.MONTHLY -> if (interval == 1) {
+        strings.everyMonth
+    } else if (interval == 2) {
+        stringResource(R.string.recurring_every_2_months)
+    } else if (interval == 3) {
+        stringResource(R.string.recurring_every_3_months)
+    } else {
+        stringResource(R.string.recurring_every_n_months, interval)
+    }
+    RecurringFrequency.YEARLY -> if (interval == 1) {
+        strings.everyYear
+    } else {
+        stringResource(R.string.recurring_every_n_years, interval)
+    }
+}
+
+private fun DayOfWeek.label(strings: RecurringEditorStrings): String = when (this) {
+    DayOfWeek.MONDAY -> strings.monday
+    DayOfWeek.TUESDAY -> strings.tuesday
+    DayOfWeek.WEDNESDAY -> strings.wednesday
+    DayOfWeek.THURSDAY -> strings.thursday
+    DayOfWeek.FRIDAY -> strings.friday
+    DayOfWeek.SATURDAY -> strings.saturday
+    DayOfWeek.SUNDAY -> strings.sunday
+}
+
+private fun RecurringTransactionEntity.effectiveScheduleWeekday(): Int? =
+    if (frequency == RecurringFrequency.WEEKLY) {
+        scheduleWeekday ?: startDate.dayOfWeek.value
+    } else {
+        null
+    }
+
+private fun RecurringTransactionEntity.effectiveScheduleMonthDay(): Int? =
+    if (frequency == RecurringFrequency.MONTHLY) {
+        scheduleMonthDay ?: startDate.dayOfMonth.coerceAtMost(RecurringSchedule.MaxMonthDay)
+    } else {
+        null
+    }
 
 private fun List<CategoryEntity>.availableForRecurringType(
     type: RecurringTransactionTypeFilter,

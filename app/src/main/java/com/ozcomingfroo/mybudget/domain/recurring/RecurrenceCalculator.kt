@@ -13,7 +13,7 @@ object RecurrenceCalculator {
             RecurringFrequency.WEEKLY -> fromDate.plusWeeks(rule.interval.toLong())
             RecurringFrequency.MONTHLY -> fromDate.plusMonthsPreservingAnchor(
                 monthsToAdd = rule.interval.toLong(),
-                anchorDay = rule.startDate.dayOfMonth,
+                anchorDay = rule.scheduleMonthDay ?: rule.startDate.dayOfMonth,
             )
             RecurringFrequency.YEARLY -> fromDate.plusYearsPreservingAnchor(
                 yearsToAdd = rule.interval.toLong(),

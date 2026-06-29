@@ -47,6 +47,10 @@ data class RecurringTransactionEntity(
     val note: String? = null,
     val frequency: RecurringFrequency,
     val interval: Int,
+    @ColumnInfo(name = "schedule_weekday")
+    val scheduleWeekday: Int? = null,
+    @ColumnInfo(name = "schedule_month_day")
+    val scheduleMonthDay: Int? = null,
     @ColumnInfo(name = "start_date")
     val startDate: LocalDate,
     @ColumnInfo(name = "end_date")

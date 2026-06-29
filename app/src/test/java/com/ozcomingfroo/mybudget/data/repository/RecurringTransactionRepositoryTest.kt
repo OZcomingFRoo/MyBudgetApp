@@ -85,6 +85,7 @@ class RecurringTransactionRepositoryTest {
         title = "Rent",
         frequency = RecurringFrequency.MONTHLY,
         interval = 1,
+        scheduleMonthDay = 1,
         startDate = LocalDate.of(2026, 6, 1),
         nextRunDate = LocalDate.of(2026, 7, 1),
         createdAt = Instant.parse("2026-01-01T00:00:00Z"),

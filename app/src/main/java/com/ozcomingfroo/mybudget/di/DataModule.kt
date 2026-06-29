@@ -34,6 +34,7 @@ object DataModule {
         MyBudgetDatabase.Migration1To2,
         MyBudgetDatabase.Migration2To3,
         MyBudgetDatabase.Migration3To4,
+        MyBudgetDatabase.Migration4To5,
     ).build()
 
     @Provides

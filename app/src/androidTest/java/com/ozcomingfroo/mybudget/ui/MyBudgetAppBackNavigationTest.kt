@@ -23,6 +23,7 @@ import com.ozcomingfroo.mybudget.data.repository.BudgetBookRepository
 import com.ozcomingfroo.mybudget.data.repository.CategoryRepository
 import com.ozcomingfroo.mybudget.data.repository.RecurringTransactionRepository
 import com.ozcomingfroo.mybudget.data.repository.TransactionRepository
+import com.ozcomingfroo.mybudget.reminders.DailyReminderScheduler
 import com.ozcomingfroo.mybudget.widget.BalanceWidgetUpdateNotifier
 import java.io.File
 import java.time.Clock
@@ -216,6 +217,7 @@ class MyBudgetAppBackNavigationTest {
                 recurringTransactionRepository = recurringTransactionRepository,
                 budgetBookRepository = budgetBookRepository,
                 appPreferencesRepository = appPreferencesRepository,
+                dailyReminderScheduler = DailyReminderScheduler(context, TestClock),
                 clock = TestClock,
             )
         }

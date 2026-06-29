@@ -21,7 +21,7 @@ import com.ozcomingfroo.mybudget.data.local.entity.TransactionEntity
         TransactionEntity::class,
         RecurringTransactionEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 @TypeConverters(MyBudgetTypeConverters::class)
@@ -96,6 +96,53 @@ abstract class MyBudgetDatabase : RoomDatabase() {
                     """
                     CREATE INDEX IF NOT EXISTS index_recurring_transactions_is_active_next_run_date_id
                     ON recurring_transactions(is_active, next_run_date, id)
+                    """.trimIndent(),
+                )
+            }
+        }
+
+        val Migration4To5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    ALTER TABLE recurring_transactions
+                    ADD COLUMN schedule_weekday INTEGER
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    ALTER TABLE recurring_transactions
+                    ADD COLUMN schedule_month_day INTEGER
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    UPDATE recurring_transactions
+                    SET schedule_weekday = CAST(strftime('%w', start_date) AS INTEGER) + 1
+                    WHERE frequency = 'WEEKLY'
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    UPDATE recurring_transactions
+                    SET schedule_weekday = 7
+                    WHERE frequency = 'WEEKLY'
+                    AND schedule_weekday = 1
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    UPDATE recurring_transactions
+                    SET schedule_weekday = schedule_weekday - 1
+                    WHERE frequency = 'WEEKLY'
+                    AND schedule_weekday BETWEEN 2 AND 7
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    UPDATE recurring_transactions
+                    SET schedule_month_day = MIN(CAST(strftime('%d', start_date) AS INTEGER), 30)
+                    WHERE frequency = 'MONTHLY'
                     """.trimIndent(),
                 )
             }

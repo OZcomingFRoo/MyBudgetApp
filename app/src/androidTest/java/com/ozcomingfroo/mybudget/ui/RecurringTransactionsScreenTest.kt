@@ -1,8 +1,10 @@
 package com.ozcomingfroo.mybudget.ui
 
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -49,8 +51,11 @@ class RecurringTransactionsScreenTest {
                         assertEquals(TransactionType.EXPENSE, rule.type)
                         assertEquals(RecurringFrequency.MONTHLY, rule.frequency)
                         assertEquals(1, rule.interval)
+                        assertEquals(16, rule.scheduleMonthDay)
+                        assertEquals(null, rule.scheduleWeekday)
                         assertEquals(LocalDate.of(2026, 6, 16), rule.startDate)
                         assertEquals(LocalDate.of(2026, 6, 16), rule.nextRunDate)
+                        assertEquals(LocalDate.of(2036, 6, 16), rule.endDate)
                         assertEquals(TestInstant, rule.createdAt)
                     },
                     snackbarHostState = SnackbarHostState(),
@@ -59,12 +64,37 @@ class RecurringTransactionsScreenTest {
         }
 
         composeRule.onNodeWithTag("recurring_amount").performTextInput("25")
+        composeRule.onNodeWithTag("recurring_month_day").assertIsDisplayed()
+        composeRule.onNodeWithTag("recurring_save").assertIsDisplayed()
+        composeRule.onNodeWithTag("recurring_amount").assertIsDisplayed()
         composeRule.onNodeWithTag("recurring_save").performClick()
 
         composeRule.waitUntil(timeoutMillis = 5_000) { savedAmountMinor.get() == 2_500L }
         composeRule.runOnIdle {
             assertEquals(CategoryId, savedCategoryId.get())
         }
+    }
+
+    @Test
+    fun addSheetHidesInternalScheduleDateFields() {
+        composeRule.setContent {
+            MyBudgetTheme {
+                RecurringTransactionEditorSheet(
+                    rule = null,
+                    selectedBudgetBookId = BudgetBookId,
+                    categories = listOf(testCategory()),
+                    clock = TestClock,
+                    onDismiss = {},
+                    onSave = {},
+                    snackbarHostState = SnackbarHostState(),
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("recurring_amount").assertIsDisplayed()
+        composeRule.onNodeWithTag("recurring_save").assertIsDisplayed()
+        composeRule.onNodeWithTag("recurring_month_day").assertIsDisplayed()
+        composeRule.onAllNodesWithTag("recurring_weekday_1").assertCountEquals(0)
     }
 
     @Test
@@ -175,6 +205,7 @@ class RecurringTransactionsScreenTest {
         title = "Rent",
         frequency = RecurringFrequency.MONTHLY,
         interval = 1,
+        scheduleMonthDay = 1,
         startDate = LocalDate.of(2026, 6, 1),
         nextRunDate = LocalDate.of(2026, 7, 1),
         createdAt = createdAt,

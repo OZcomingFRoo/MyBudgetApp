@@ -2,6 +2,8 @@
 
 import com.ozcomingfroo.mybudget.data.local.dao.RecurringTransactionDao
 import com.ozcomingfroo.mybudget.data.local.entity.RecurringTransactionEntity
+import com.ozcomingfroo.mybudget.data.local.model.RecurringFrequency
+import com.ozcomingfroo.mybudget.domain.recurring.RecurringSchedule
 import java.time.Clock
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -35,6 +37,18 @@ class RecurringTransactionRepository @Inject constructor(
         require(rule.nextRunDate >= rule.startDate) { "Next run date cannot be before start date." }
         require(rule.endDate == null || rule.endDate >= rule.startDate) {
             "End date cannot be before start date."
+        }
+        require(rule.scheduleWeekday == null || rule.scheduleWeekday in 1..7) {
+            "Weekly schedule weekday must be between 1 and 7."
+        }
+        require(rule.scheduleMonthDay == null || rule.scheduleMonthDay in RecurringSchedule.MinMonthDay..RecurringSchedule.MaxMonthDay) {
+            "Monthly schedule day must be between 1 and 30."
+        }
+        require(rule.frequency != RecurringFrequency.WEEKLY || rule.scheduleWeekday != null) {
+            "Weekly recurring transactions must store a schedule weekday."
+        }
+        require(rule.frequency != RecurringFrequency.MONTHLY || rule.scheduleMonthDay != null) {
+            "Monthly recurring transactions must store a schedule month day."
         }
     }
 }
