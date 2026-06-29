@@ -416,11 +416,15 @@ internal fun recurringBaseTitle(
 @Composable
 private fun RecurringFrequency.recurrencePhrase(interval: Int): String =
     when (this) {
-        RecurringFrequency.DAILY -> if (interval == 1) {
-            stringResource(R.string.recurring_every_day)
-        } else {
-            stringResource(R.string.recurring_every_n_days, interval)
-        }
+    RecurringFrequency.DAILY -> if (interval == 1) {
+        stringResource(R.string.recurring_every_day)
+    } else if (interval == 2) {
+        stringResource(R.string.recurring_every_2_days)
+    } else if (interval == 3) {
+        stringResource(R.string.recurring_every_3_days)
+    } else {
+        stringResource(R.string.recurring_every_n_days, interval)
+    }
     RecurringFrequency.WEEKLY -> if (interval == 1) {
         stringResource(R.string.recurring_every_week)
     } else if (interval == 2) {
@@ -882,8 +886,14 @@ internal fun RecurringTransactionEditorSheet(
         active = stringResource(R.string.active),
         activeHelper = stringResource(R.string.recurring_active_helper),
         everyDay = stringResource(R.string.recurring_every_day),
+        every2Days = stringResource(R.string.recurring_every_2_days),
+        every3Days = stringResource(R.string.recurring_every_3_days),
         everyWeek = stringResource(R.string.recurring_every_week),
+        every2Weeks = stringResource(R.string.recurring_every_2_weeks),
+        every3Weeks = stringResource(R.string.recurring_every_3_weeks),
         everyMonth = stringResource(R.string.recurring_every_month),
+        every2Months = stringResource(R.string.recurring_every_2_months),
+        every3Months = stringResource(R.string.recurring_every_3_months),
         everyYear = stringResource(R.string.recurring_every_year),
         monday = stringResource(R.string.monday),
         tuesday = stringResource(R.string.tuesday),
@@ -1635,8 +1645,14 @@ private data class RecurringEditorStrings(
     val active: String,
     val activeHelper: String,
     val everyDay: String,
+    val every2Days: String,
+    val every3Days: String,
     val everyWeek: String,
+    val every2Weeks: String,
+    val every3Weeks: String,
     val everyMonth: String,
+    val every2Months: String,
+    val every3Months: String,
     val everyYear: String,
     val monday: String,
     val tuesday: String,
@@ -1743,24 +1759,28 @@ private fun RecurringFrequency.intervalLabel(
 ): String = when (this) {
     RecurringFrequency.DAILY -> if (interval == 1) {
         strings.everyDay
+    } else if (interval == 2) {
+        strings.every2Days
+    } else if (interval == 3) {
+        strings.every3Days
     } else {
         stringResource(R.string.recurring_every_n_days, interval)
     }
     RecurringFrequency.WEEKLY -> if (interval == 1) {
         strings.everyWeek
     } else if (interval == 2) {
-        stringResource(R.string.recurring_every_2_weeks)
+        strings.every2Weeks
     } else if (interval == 3) {
-        stringResource(R.string.recurring_every_3_weeks)
+        strings.every3Weeks
     } else {
         stringResource(R.string.recurring_every_n_weeks, interval)
     }
     RecurringFrequency.MONTHLY -> if (interval == 1) {
         strings.everyMonth
     } else if (interval == 2) {
-        stringResource(R.string.recurring_every_2_months)
+        strings.every2Months
     } else if (interval == 3) {
-        stringResource(R.string.recurring_every_3_months)
+        strings.every3Months
     } else {
         stringResource(R.string.recurring_every_n_months, interval)
     }

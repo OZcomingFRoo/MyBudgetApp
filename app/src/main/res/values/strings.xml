@@ -130,6 +130,8 @@
     <string name="recurring_until_date">until %1$s</string>
     <string name="recurring_next_run_filter_summary">Next: %1$s - %2$s</string>
     <string name="recurring_every_day">every day</string>
+    <string name="recurring_every_2_days">every 2 days</string>
+    <string name="recurring_every_3_days">every 3 days</string>
     <string name="recurring_every_n_days">every %1$d days</string>
     <string name="recurring_every_week">every week</string>
     <string name="recurring_every_2_weeks">every 2 weeks</string>
