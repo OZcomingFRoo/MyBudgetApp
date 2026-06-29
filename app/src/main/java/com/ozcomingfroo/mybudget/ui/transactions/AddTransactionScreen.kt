@@ -93,11 +93,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -148,6 +146,7 @@ import com.ozcomingfroo.mybudget.data.preferences.AppThemeMode
 import com.ozcomingfroo.mybudget.data.preferences.DefaultTransactionType
 import com.ozcomingfroo.mybudget.data.repository.BudgetBookRepository
 import com.ozcomingfroo.mybudget.data.repository.CategoryRepository
+import com.ozcomingfroo.mybudget.ui.components.MyBudgetTimePickerDialog
 import com.ozcomingfroo.mybudget.ui.onboarding.OnboardingScreen
 import com.ozcomingfroo.mybudget.ui.theme.BudgetBlack
 import com.ozcomingfroo.mybudget.ui.theme.BudgetGreen
@@ -540,29 +539,14 @@ internal fun AddTransactionScreen(
     }
 
     if (showTimePicker) {
-        val timePickerState = rememberTimePickerState(
+        MyBudgetTimePickerDialog(
             initialHour = selectedTime.hour,
             initialMinute = selectedTime.minute,
-            is24Hour = true,
-        )
-        AlertDialog(
             onDismissRequest = { showTimePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        selectedTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
-                        showTimePicker = false
-                    },
-                ) {
-                    Text(stringResource(R.string.save))
-                }
+            onTimeSelected = { hour, minute ->
+                selectedTime = LocalTime.of(hour, minute)
+                showTimePicker = false
             },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
-            text = { TimePicker(state = timePickerState) },
         )
     }
 }
@@ -907,29 +891,14 @@ internal fun EditTransactionSheet(
     }
 
     if (showTimePicker) {
-        val timePickerState = rememberTimePickerState(
+        MyBudgetTimePickerDialog(
             initialHour = selectedTime.hour,
             initialMinute = selectedTime.minute,
-            is24Hour = true,
-        )
-        AlertDialog(
             onDismissRequest = { showTimePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        selectedTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
-                        showTimePicker = false
-                    },
-                ) {
-                    Text(stringResource(R.string.save))
-                }
+            onTimeSelected = { hour, minute ->
+                selectedTime = LocalTime.of(hour, minute)
+                showTimePicker = false
             },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
-            text = { TimePicker(state = timePickerState) },
         )
     }
 }

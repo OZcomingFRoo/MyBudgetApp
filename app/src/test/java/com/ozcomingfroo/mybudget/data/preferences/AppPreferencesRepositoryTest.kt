@@ -15,6 +15,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -52,6 +53,9 @@ class AppPreferencesRepositoryTest {
         assertEquals(AppLanguageMode.HE, preferences.languageMode)
         assertFalse(preferences.hasCompletedOnboarding)
         assertEquals(DefaultTransactionType.EXPENSE, preferences.defaultTransactionType)
+        assertTrue(preferences.dailyReminderEnabled)
+        assertEquals(20, preferences.dailyReminderHour)
+        assertEquals(0, preferences.dailyReminderMinute)
     }
 
     @Test
@@ -61,6 +65,8 @@ class AppPreferencesRepositoryTest {
         repository.setLanguageMode(AppLanguageMode.HE)
         repository.setHasCompletedOnboarding(true)
         repository.setDefaultTransactionType(DefaultTransactionType.INCOME)
+        repository.setDailyReminderEnabled(false)
+        repository.setDailyReminderTime(8, 30)
 
         val preferences = repository.getPreferences()
 
@@ -69,6 +75,9 @@ class AppPreferencesRepositoryTest {
         assertEquals(AppLanguageMode.HE, preferences.languageMode)
         assertEquals(true, preferences.hasCompletedOnboarding)
         assertEquals(DefaultTransactionType.INCOME, preferences.defaultTransactionType)
+        assertFalse(preferences.dailyReminderEnabled)
+        assertEquals(8, preferences.dailyReminderHour)
+        assertEquals(30, preferences.dailyReminderMinute)
     }
 
     @Test

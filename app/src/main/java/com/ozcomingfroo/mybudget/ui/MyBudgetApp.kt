@@ -68,6 +68,7 @@ import com.ozcomingfroo.mybudget.data.repository.BudgetBookRepository
 import com.ozcomingfroo.mybudget.data.repository.CategoryRepository
 import com.ozcomingfroo.mybudget.data.repository.RecurringTransactionRepository
 import com.ozcomingfroo.mybudget.data.repository.TransactionRepository
+import com.ozcomingfroo.mybudget.reminders.DailyReminderScheduler
 import com.ozcomingfroo.mybudget.ui.onboarding.OnboardingScreen
 import com.ozcomingfroo.mybudget.ui.theme.MyBudgetTheme
 import java.time.Clock
@@ -85,6 +86,7 @@ fun MyBudgetApp(
     recurringTransactionRepository: RecurringTransactionRepository,
     budgetBookRepository: BudgetBookRepository,
     appPreferencesRepository: AppPreferencesRepository,
+    dailyReminderScheduler: DailyReminderScheduler,
     clock: Clock,
     launchDestination: AppLaunchDestination? = null,
     onLaunchDestinationHandled: () -> Unit = {},
@@ -130,6 +132,7 @@ fun MyBudgetApp(
                     recurringTransactionRepository = recurringTransactionRepository,
                     appPreferencesRepository = appPreferencesRepository,
                     budgetBookRepository = budgetBookRepository,
+                    dailyReminderScheduler = dailyReminderScheduler,
                     clock = clock,
                     launchDestination = launchDestination,
                     onLaunchDestinationHandled = onLaunchDestinationHandled,
@@ -218,6 +221,7 @@ private fun MyBudgetAppShell(
     recurringTransactionRepository: RecurringTransactionRepository,
     appPreferencesRepository: AppPreferencesRepository,
     budgetBookRepository: BudgetBookRepository,
+    dailyReminderScheduler: DailyReminderScheduler,
     clock: Clock,
     launchDestination: AppLaunchDestination?,
     onLaunchDestinationHandled: () -> Unit,
@@ -233,6 +237,14 @@ private fun MyBudgetAppShell(
         ?: AppDestination.Dashboard
     val isDrawerActive = drawerState.currentValue != DrawerValue.Closed ||
         drawerState.targetValue != DrawerValue.Closed
+
+    LaunchedEffect(
+        preferences.dailyReminderEnabled,
+        preferences.dailyReminderHour,
+        preferences.dailyReminderMinute,
+    ) {
+        dailyReminderScheduler.schedule(preferences)
+    }
 
     LaunchedEffect(launchDestination) {
         when (launchDestination) {

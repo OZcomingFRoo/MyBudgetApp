@@ -172,6 +172,16 @@
     <string name="settings_language">Language</string>
     <string name="settings_transaction_defaults">Transaction Defaults</string>
     <string name="default_transaction_type_helper">This only affects new transactions.</string>
+    <string name="settings_daily_reminder">Daily Reminder</string>
+    <string name="daily_reminder_helper">Get a daily prompt to log your transactions.</string>
+    <string name="daily_reminder_enabled">Remind me daily</string>
+    <string name="daily_reminder_enabled_helper">The reminder opens Add Transaction.</string>
+    <string name="daily_reminder_time">Reminder time</string>
+    <string name="daily_reminder_time_helper">Choose when the daily reminder appears.</string>
+    <string name="daily_reminder_channel_name">Transaction reminders</string>
+    <string name="daily_reminder_channel_description">Daily reminders to log transactions.</string>
+    <string name="daily_reminder_notification_title">Log your transactions</string>
+    <string name="daily_reminder_notification_body">Take a moment to add today\'s spending or income.</string>
     <string name="settings_data_privacy">Data &amp; Privacy</string>
     <string name="data_privacy_local_only">Your budget data is stored locally on this device.</string>
     <string name="settings_about">About</string>

@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.ozcomingfroo.mybudget.widget.BalanceWidgetUpdateNotifier
@@ -19,6 +20,9 @@ data class AppPreferences(
     val languageMode: AppLanguageMode,
     val hasCompletedOnboarding: Boolean,
     val defaultTransactionType: DefaultTransactionType,
+    val dailyReminderEnabled: Boolean,
+    val dailyReminderHour: Int,
+    val dailyReminderMinute: Int,
 )
 
 @Singleton
@@ -35,6 +39,9 @@ class AppPreferencesRepository @Inject constructor(
             defaultTransactionType = DefaultTransactionType.fromStorageValue(
                 preferences[DEFAULT_TRANSACTION_TYPE],
             ),
+            dailyReminderEnabled = preferences[DAILY_REMINDER_ENABLED] ?: true,
+            dailyReminderHour = preferences[DAILY_REMINDER_HOUR]?.coerceIn(0, 23) ?: 20,
+            dailyReminderMinute = preferences[DAILY_REMINDER_MINUTE]?.coerceIn(0, 59) ?: 0,
         )
     }
 
@@ -73,11 +80,27 @@ class AppPreferencesRepository @Inject constructor(
         }
     }
 
+    suspend fun setDailyReminderEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[DAILY_REMINDER_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setDailyReminderTime(hour: Int, minute: Int) {
+        dataStore.edit { preferences ->
+            preferences[DAILY_REMINDER_HOUR] = hour.coerceIn(0, 23)
+            preferences[DAILY_REMINDER_MINUTE] = minute.coerceIn(0, 59)
+        }
+    }
+
     private companion object {
         val SELECTED_BUDGET_BOOK_ID = longPreferencesKey("selected_budget_book_id")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val LANGUAGE_MODE = stringPreferencesKey("language_mode")
         val HAS_COMPLETED_ONBOARDING = booleanPreferencesKey("has_completed_onboarding")
         val DEFAULT_TRANSACTION_TYPE = stringPreferencesKey("default_transaction_type")
+        val DAILY_REMINDER_ENABLED = booleanPreferencesKey("daily_reminder_enabled")
+        val DAILY_REMINDER_HOUR = intPreferencesKey("daily_reminder_hour")
+        val DAILY_REMINDER_MINUTE = intPreferencesKey("daily_reminder_minute")
     }
 }

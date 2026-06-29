@@ -285,6 +285,9 @@ class AddTransactionScreenTest {
         languageMode = AppLanguageMode.EN_US,
         hasCompletedOnboarding = true,
         defaultTransactionType = defaultTransactionType,
+        dailyReminderEnabled = true,
+        dailyReminderHour = 20,
+        dailyReminderMinute = 0,
     )
 
     private fun testCategory(

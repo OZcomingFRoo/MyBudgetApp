@@ -9,6 +9,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -79,6 +80,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -96,6 +98,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -131,6 +134,7 @@ import com.ozcomingfroo.mybudget.data.preferences.DefaultTransactionType
 import com.ozcomingfroo.mybudget.data.repository.BudgetBookRepository
 import com.ozcomingfroo.mybudget.data.repository.CategoryRepository
 import com.ozcomingfroo.mybudget.data.repository.TransactionRepository
+import com.ozcomingfroo.mybudget.ui.components.MyBudgetTimePickerDialog
 import com.ozcomingfroo.mybudget.ui.onboarding.OnboardingScreen
 import com.ozcomingfroo.mybudget.ui.theme.BudgetBlack
 import com.ozcomingfroo.mybudget.ui.theme.BudgetGreen
@@ -254,6 +258,24 @@ internal fun SettingsScreen(
             }
         }
         item {
+            SettingsSection(
+                title = stringResource(R.string.settings_daily_reminder),
+                supportingText = stringResource(R.string.daily_reminder_helper),
+            ) {
+                DailyReminderSettings(
+                    enabled = preferences.dailyReminderEnabled,
+                    hour = preferences.dailyReminderHour,
+                    minute = preferences.dailyReminderMinute,
+                    onEnabledChange = { enabled ->
+                        scope.launch { appPreferencesRepository.setDailyReminderEnabled(enabled) }
+                    },
+                    onTimeChange = { hour, minute ->
+                        scope.launch { appPreferencesRepository.setDailyReminderTime(hour, minute) }
+                    },
+                )
+            }
+        }
+        item {
             SettingsSection(title = stringResource(R.string.settings_data_privacy)) {
                 SettingsInfoText(text = stringResource(R.string.data_privacy_local_only))
             }
@@ -269,6 +291,87 @@ internal fun SettingsScreen(
                 SettingsInfoText(text = stringResource(R.string.about_app_purpose))
             }
         }
+    }
+}
+
+@Composable
+private fun DailyReminderSettings(
+    enabled: Boolean,
+    hour: Int,
+    minute: Int,
+    onEnabledChange: (Boolean) -> Unit,
+    onTimeChange: (Int, Int) -> Unit,
+) {
+    var showTimePicker by rememberSaveable { mutableStateOf(false) }
+    val timeLabel = remember(hour, minute) {
+        String.format(Locale.US, "%02d:%02d", hour, minute)
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 64.dp)
+            .clickable { onEnabledChange(!enabled) }
+            .padding(top = 12.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.daily_reminder_enabled),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(
+                text = stringResource(R.string.daily_reminder_enabled_helper),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Switch(
+            checked = enabled,
+            onCheckedChange = onEnabledChange,
+        )
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .alpha(if (enabled) 1f else 0.5f)
+            .clickable(enabled = enabled, onClick = { showTimePicker = true })
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.daily_reminder_time),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(
+                text = stringResource(R.string.daily_reminder_time_helper),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        TextButton(
+            enabled = enabled,
+            onClick = { showTimePicker = true },
+        ) {
+            Text(timeLabel)
+        }
+    }
+
+    if (showTimePicker) {
+        MyBudgetTimePickerDialog(
+            initialHour = hour,
+            initialMinute = minute,
+            onDismissRequest = { showTimePicker = false },
+            onTimeSelected = { selectedHour, selectedMinute ->
+                onTimeChange(selectedHour, selectedMinute)
+                showTimePicker = false
+            },
+        )
     }
 }
 
