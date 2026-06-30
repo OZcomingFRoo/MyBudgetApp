@@ -37,8 +37,8 @@ android {
         applicationId = "com.ozcomingfroo.mybudget"
         minSdk = 24
         targetSdk = 36
-        versionCode = 120
-        versionName = "1.2"
+        versionCode = 150
+        versionName = "1.50"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
