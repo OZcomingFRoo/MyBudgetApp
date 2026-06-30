@@ -1,8 +1,28 @@
-﻿plugins {
+﻿import java.util.Properties
+
+plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
+}
+
+val releaseSigningPropertiesFile = rootProject.file("signing/mybudget-release.properties")
+val releaseSigningProperties = Properties()
+
+if (releaseSigningPropertiesFile.isFile) {
+    releaseSigningPropertiesFile.inputStream().use(releaseSigningProperties::load)
+}
+
+fun releaseSigningProperty(name: String): String {
+    val value = releaseSigningProperties.getProperty(name)
+        ?: error("Missing release signing property '$name' in ${releaseSigningPropertiesFile.path}")
+
+    check(!value.startsWith("CHANGE_ME")) {
+        "Replace release signing property '$name' in ${releaseSigningPropertiesFile.path}"
+    }
+
+    return value
 }
 
 android {
@@ -23,8 +43,18 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(releaseSigningProperty("storeFile"))
+            storePassword = releaseSigningProperty("storePassword")
+            keyAlias = releaseSigningProperty("keyAlias")
+            keyPassword = releaseSigningProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
