@@ -23,7 +23,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -33,7 +32,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -61,6 +59,8 @@ import com.ozcomingfroo.mybudget.data.local.entity.CategoryEntity
 import com.ozcomingfroo.mybudget.data.local.entity.TransactionEntity
 import com.ozcomingfroo.mybudget.data.local.model.TransactionType
 import com.ozcomingfroo.mybudget.data.repository.TransactionRepository
+import com.ozcomingfroo.mybudget.ui.components.MyBudgetDatePicker
+import com.ozcomingfroo.mybudget.ui.components.rememberMyBudgetDatePickerState
 import com.ozcomingfroo.mybudget.ui.theme.ExpenseRed
 import com.ozcomingfroo.mybudget.ui.theme.IncomeGreen
 import java.time.Clock
@@ -336,7 +336,7 @@ private fun ReportsDateButton(
         }
     }
     if (showPicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = date.toPickerMillis())
+        val datePickerState = rememberMyBudgetDatePickerState(initialSelectedDateMillis = date.toPickerMillis())
         DatePickerDialog(
             onDismissRequest = { showPicker = false },
             confirmButton = {
@@ -355,7 +355,7 @@ private fun ReportsDateButton(
                 }
             },
         ) {
-            DatePicker(state = datePickerState)
+            MyBudgetDatePicker(state = datePickerState)
         }
     }
 }

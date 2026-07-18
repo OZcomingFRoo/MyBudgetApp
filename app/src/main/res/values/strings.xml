@@ -28,6 +28,8 @@
     <string name="amount">Amount</string>
     <string name="category">Category</string>
     <string name="date">Date</string>
+    <string name="date_picker_title">Select date</string>
+    <string name="date_picker_no_date_selected">Selected date</string>
     <string name="time">Time</string>
     <string name="date_format_hint">Use YYYY-MM-DD.</string>
     <string name="title_optional">Title optional</string>

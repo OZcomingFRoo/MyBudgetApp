@@ -37,7 +37,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -56,7 +55,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -84,6 +82,8 @@ import com.ozcomingfroo.mybudget.data.local.model.RecurringFrequency
 import com.ozcomingfroo.mybudget.data.local.model.TransactionType
 import com.ozcomingfroo.mybudget.data.repository.RecurringTransactionRepository
 import com.ozcomingfroo.mybudget.domain.recurring.RecurringSchedule
+import com.ozcomingfroo.mybudget.ui.components.MyBudgetDatePicker
+import com.ozcomingfroo.mybudget.ui.components.rememberMyBudgetDatePickerState
 import com.ozcomingfroo.mybudget.ui.theme.ExpenseRed
 import com.ozcomingfroo.mybudget.ui.theme.IncomeGreen
 import java.time.Clock
@@ -1519,7 +1519,7 @@ private fun RecurringDateButton(
         }
     }
     if (showPicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = date.toPickerMillis())
+        val datePickerState = rememberMyBudgetDatePickerState(initialSelectedDateMillis = date.toPickerMillis())
         DatePickerDialog(
             onDismissRequest = { showPicker = false },
             confirmButton = {
@@ -1538,7 +1538,7 @@ private fun RecurringDateButton(
                 }
             },
         ) {
-            DatePicker(state = datePickerState)
+            MyBudgetDatePicker(state = datePickerState)
         }
     }
 }

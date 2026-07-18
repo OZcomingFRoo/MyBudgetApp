@@ -63,7 +63,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenuItem
@@ -92,7 +91,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -143,6 +141,8 @@ import com.ozcomingfroo.mybudget.data.preferences.DefaultTransactionType
 import com.ozcomingfroo.mybudget.data.repository.BudgetBookRepository
 import com.ozcomingfroo.mybudget.data.repository.CategoryRepository
 import com.ozcomingfroo.mybudget.data.repository.TransactionRepository
+import com.ozcomingfroo.mybudget.ui.components.MyBudgetDatePicker
+import com.ozcomingfroo.mybudget.ui.components.rememberMyBudgetDatePickerState
 import com.ozcomingfroo.mybudget.ui.onboarding.OnboardingScreen
 import com.ozcomingfroo.mybudget.ui.theme.BudgetBlack
 import com.ozcomingfroo.mybudget.ui.theme.BudgetGreen
@@ -609,7 +609,7 @@ private fun HistoryDateButton(
         }
     }
     if (showPicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = date.toPickerMillis())
+        val datePickerState = rememberMyBudgetDatePickerState(initialSelectedDateMillis = date.toPickerMillis())
         DatePickerDialog(
             onDismissRequest = { showPicker = false },
             confirmButton = {
@@ -628,7 +628,7 @@ private fun HistoryDateButton(
                 }
             },
         ) {
-            DatePicker(state = datePickerState)
+            MyBudgetDatePicker(state = datePickerState)
         }
     }
 }
